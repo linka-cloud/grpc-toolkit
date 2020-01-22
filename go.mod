@@ -1,4 +1,4 @@
-module gitlab.bertha.cloud/partitio/grpc-service
+module gitlab.bertha.cloud/partitio/grpc
 
 go 1.13
 

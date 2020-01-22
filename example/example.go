@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	service2 "gitlab.bertha.cloud/partitio/grpc-service/service"
+	"gitlab.bertha.cloud/partitio/grpc/service"
 )
 
 type GreeterHandler struct{}
@@ -30,16 +30,16 @@ func (g *GreeterHandler) SayHelloStream(req *HelloStreamRequest, s Greeter_SayHe
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	var svc service2.Service
+	var svc service.Service
 	var err error
-	svc, err = service2.New(
-		service2.WithContext(ctx),
-		service2.WithName("Greeting"),
-		service2.WithAfterStart(func() error {
+	svc, err = service.New(
+		service.WithContext(ctx),
+		service.WithName("Greeting"),
+		service.WithAfterStart(func() error {
 			fmt.Println("Server listening on", svc.Options().Address())
 			return nil
 		}),
-		service2.WithAfterStop(func() error {
+		service.WithAfterStop(func() error {
 			fmt.Println("Stopping server")
 			return nil
 		}),
