@@ -144,9 +144,11 @@ func WithKey(path string) Option {
 	}
 }
 
-func WithDB(db *gorm.DB) Option {
+func WithDB(dialect string, args ...interface{}) Option {
+	db, err := gorm.Open(dialect, args...)
 	return func(o *options) {
 		o.db = db
+		o.error = err
 	}
 }
 
@@ -236,6 +238,8 @@ type options struct {
 
 	clientInterceptors       []grpc.UnaryClientInterceptor
 	streamClientInterceptors []grpc.StreamClientInterceptor
+
+	error error
 }
 
 func (o *options) Name() string {

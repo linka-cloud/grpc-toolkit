@@ -8,6 +8,7 @@ import (
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/cobra"
+	"go.uber.org/multierr"
 	"google.golang.org/grpc"
 )
 
@@ -44,6 +45,9 @@ func newService(opts ...Option) (*service, error) {
 	defer s.mu.Unlock()
 	for _, f := range opts {
 		f(s.opts)
+	}
+	if s.opts.error != nil {
+		return nil, s.opts.error
 	}
 	go func() {
 		for {
@@ -144,5 +148,9 @@ func (s *service) Stop() error {
 func (s *service) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.Stop()
+	err := multierr.Combine(s.Stop())
+	if s.opts.db != nil {
+		err = multierr.Append(s.opts.db.Close(), err)
+	}
+	return err
 }
