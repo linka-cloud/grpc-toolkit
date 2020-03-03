@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"net"
 	"os"
 	"sync"
@@ -27,11 +28,12 @@ func New(opts ...Option) (Service, error) {
 }
 
 type service struct {
-	cmd    *cobra.Command
-	opts   *options
-	server *grpc.Server
-	list   net.Listener
-	mu     sync.Mutex
+	cmd     *cobra.Command
+	opts    *options
+	cancel  context.CancelFunc
+	server  *grpc.Server
+	list    net.Listener
+	mu      sync.Mutex
 	running bool
 }
 
@@ -49,6 +51,7 @@ func newService(opts ...Option) (*service, error) {
 	if s.opts.error != nil {
 		return nil, s.opts.error
 	}
+	s.opts.ctx, s.cancel = context.WithCancel(s.opts.ctx)
 	go func() {
 		for {
 			select {
@@ -117,7 +120,7 @@ func (s *service) run() error {
 		}
 	}
 	s.mu.Unlock()
-	return <- errs
+	return <-errs
 }
 
 func (s *service) Start() error {
@@ -136,6 +139,7 @@ func (s *service) Stop() error {
 		}
 	}
 	s.server.GracefulStop()
+	s.cancel()
 	s.running = false
 	for i := range s.opts.afterStop {
 		if err := s.opts.afterStop[i](); err != nil {
