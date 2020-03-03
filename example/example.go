@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.bertha.cloud/partitio/grpc/service"
+	"gitlab.bertha.cloud/partitio/lab/grpc/service"
 )
 
 type GreeterHandler struct{}
