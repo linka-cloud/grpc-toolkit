@@ -6,14 +6,15 @@ import (
 )
 
 var cmd = &cobra.Command{
-	Short: "A gRPC micro service",
+	Short:        "A gRPC micro service",
+	SilenceUsage: true,
 }
 
 const (
-	caCert = "ca_cert"
+	caCert        = "ca_cert"
 	serverAddress = "server_address"
-	serverCert = "server_cert"
-	serverKey = "server_key"
+	serverCert    = "server_cert"
+	serverKey     = "server_key"
 )
 
 func init() {
