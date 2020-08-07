@@ -11,10 +11,14 @@ var cmd = &cobra.Command{
 }
 
 const (
-	caCert        = "ca_cert"
 	serverAddress = "server_address"
-	serverCert    = "server_cert"
-	serverKey     = "server_key"
+	
+	secure        = "secure"
+	reflect       = "reflect"
+
+	caCert     = "ca_cert"
+	serverCert = "server_cert"
+	serverKey  = "server_key"
 )
 
 func init() {
@@ -22,6 +26,15 @@ func init() {
 	// server_address
 	cmd.Flags().String(serverAddress, "0.0.0.0:0", "Bind address for the server. 127.0.0.1:9090 [$SERVER_ADDRESS]")
 	viper.BindPFlag(serverAddress, cmd.Flags().Lookup(serverAddress))
+
+	// secure
+	cmd.Flags().Bool(secure, true, "Generate self signed certificate if none provided [$SECURE]")
+	viper.BindPFlag(secure, cmd.Flags().Lookup(secure))
+
+	// reflect
+	cmd.Flags().Bool(reflect, false, "Enable gRPC reflection server [$REFLECT]")
+	viper.BindPFlag(reflect, cmd.Flags().Lookup(reflect))
+
 	// ca_cert
 	cmd.Flags().String(caCert, "", "Path to Root CA certificate [$CA_CERT]")
 	viper.BindPFlag(caCert, cmd.Flags().Lookup(caCert))
@@ -35,6 +48,8 @@ func init() {
 
 func parseFlags(o *options) *options {
 	o.address = viper.GetString(serverAddress)
+	o.secure = viper.GetBool(secure)
+	o.reflection = viper.GetBool(reflect)
 	o.caCert = viper.GetString(caCert)
 	o.cert = viper.GetString(serverCert)
 	o.key = viper.GetString(serverKey)

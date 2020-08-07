@@ -21,44 +21,26 @@ GLOBAL OPTIONS:
    	--client_retries value          Sets the client retries. Default: 1 (default: 1) [$MICRO_CLIENT_RETRIES]
    	--client_pool_size value        Sets the client connection pool size. Default: 1 (default: 0) [$MICRO_CLIENT_POOL_SIZE]
    	--client_pool_ttl value         Sets the client connection pool ttl. e.g 500ms, 5s, 1m. Default: 1m [$MICRO_CLIENT_POOL_TTL]
-   	--register_ttl value            Register TTL in seconds (default: 0) [$MICRO_REGISTER_TTL]
-   	--register_interval value       Register interval in seconds (default: 0) [$MICRO_REGISTER_INTERVAL]
-   	--server value                  Server for go-micro; rpc [$MICRO_SERVER]
-   	--server_name value             Name of the server. go.micro.srv.example [$MICRO_SERVER_NAME]
-   	--server_version value          Version of the server. 1.1.0 [$MICRO_SERVER_VERSION]
-   	--server_id value               Id of the server. Auto-generated if not specified [$MICRO_SERVER_ID]
-   	--server_address value          Bind address for the server. 127.0.0.1:8080 [$MICRO_SERVER_ADDRESS]
-   	--server_advertise value        Used instead of the server_address when registering with discovery. 127.0.0.1:8080 [$MICRO_SERVER_ADVERTISE]
-   	--server_metadata value         A list of key-value pairs defining metadata. version=1.0.0 [$MICRO_SERVER_METADATA]
-   	--broker value                  Broker for pub/sub. http, nats, rabbitmq [$MICRO_BROKER]
-   	--broker_address value          Comma-separated list of broker addresses [$MICRO_BROKER_ADDRESS]
-   	--registry value                Registry for discovery. consul, mdns [$MICRO_REGISTRY]
-   	--registry_address value        Comma-separated list of registry addresses [$MICRO_REGISTRY_ADDRESS]
-   	--selector value                Selector used to pick nodes for querying [$MICRO_SELECTOR]
-   	--transport value               Transport mechanism used; http [$MICRO_TRANSPORT]
-   	--transport_address value       Comma-separated list of transport addresses [$MICRO_TRANSPORT_ADDRESS]
-   	--db_path value                 Path to sqlite db (e.g. /data/agents.db) (default: "agents.db") [$DB_PATH]
    	--help, -h                      show help
 
-   	--register_ttl            REGISTER_TTL
-   	--register_interval       REGISTER_INTERVAL
-   	--server_name             SERVER_NAME
-   	--server_version          SERVER_VERSION
-   	--server_id               SERVER_ID
-   	--server_advertise        SERVER_ADVERTISE
-   	--broker                  BROKER
-   	--broker_address          BROKER_ADDRESS
-   	--registry                REGISTRY
-   	--registry_address        REGISTRY_ADDRESS
-   	--selector                SELECTOR
-   	--transport               TRANSPORT
-   	--transport_address       TRANSPORT_ADDRESS
-   	--db_path                 DB_PATH
-
-	--server_address          SERVER_ADDRESS
-   	--ca_cert				  CA_CERT
+	--secure				  SECURE
+	--ca_cert				  CA_CERT
 	--server_cert			  SERVER_CERT
-    --server_key			  SERVER_KEY
+	--server_key			  SERVER_KEY
+	
+   	--register_ttl            REGISTER_TTL
+	--register_interval       REGISTER_INTERVAL
+	
+	--server_address          SERVER_ADDRESS	   
+   	--server_name             SERVER_NAME
+	   
+	--broker                  BROKER
+   	--broker_address          BROKER_ADDRESS
+	   
+	--registry                REGISTRY
+   	--registry_address        REGISTRY_ADDRESS
+	   
+	--db_path                 DB_PATH
 */
 
 type Options interface {
@@ -108,7 +90,7 @@ func WithName(name string) Option {
 	}
 }
 
-// Context specifies a context for the service.
+// WithContext specifies a context for the service.
 // Can be used to signal shutdown of the service.
 // Can be used for extra option values.
 func WithContext(ctx context.Context) Option {
@@ -117,7 +99,7 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-// Address sets the address of the server
+// WithAddress sets the address of the server
 func WithAddress(addr string) Option {
 	return func(o *options) {
 		o.address = addr
@@ -204,7 +186,7 @@ func WithUnaryClientInterceptor(i ...grpc.UnaryClientInterceptor) Option {
 	}
 }
 
-// WrapHandler adds a handler Wrapper to a list of options passed into the server
+// WithUnaryServerInterceptor adds unary Wrapper interceptors to the options passed into the server
 func WithUnaryServerInterceptor(i ...grpc.UnaryServerInterceptor) Option {
 	return func(o *options) {
 		o.serverInterceptors = append(o.serverInterceptors, i...)
@@ -223,7 +205,7 @@ func WithStreamClientInterceptor(i ...grpc.StreamClientInterceptor) Option {
 	}
 }
 
-// WrapSubscriber adds a subscriber Wrapper to a list of options passed into the server
+// WithSubscriberInterceptor adds subscriber interceptors to the options passed into the server
 func WithSubscriberInterceptor(w ...interface{}) Option {
 	return func(o *options) {
 
