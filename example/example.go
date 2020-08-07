@@ -35,6 +35,8 @@ func main() {
 	svc, err = service.New(
 		service.WithContext(ctx),
 		service.WithName("Greeting"),
+		service.WithReflection(true),
+		service.WithSecure(true),
 		service.WithAfterStart(func() error {
 			fmt.Println("Server listening on", svc.Options().Address())
 			return nil

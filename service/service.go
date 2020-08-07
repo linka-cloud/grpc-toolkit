@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 )
 
 type Service interface {
@@ -60,6 +62,11 @@ func newService(opts ...Option) (*service, error) {
 			}
 		}
 	}()
+	var err error
+	s.list, err = net.Listen("tcp", s.opts.address)
+	if err != nil {
+		return nil, err
+	}
 	if err := s.opts.parseTLSConfig(); err != nil {
 		return nil, err
 	}
@@ -70,10 +77,19 @@ func newService(opts ...Option) (*service, error) {
 		}
 		return s.run()
 	}
-	gopts := []grpc.ServerOption{grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(s.opts.serverInterceptors...))}
-	// TODO : check tls config and tls auth
-	// grpc.Creds(credentials.NewTLS(&s.opts.tlsConfig))
+	gopts := []grpc.ServerOption{
+		grpc.Creds(credentials.NewTLS(s.opts.tlsConfig)),
+		grpc.UnaryInterceptor(
+			grpcmiddleware.ChainUnaryServer(s.opts.serverInterceptors...),
+		),
+	}
+	if s.opts.tlsConfig != nil {
+		gopts = append(gopts)
+	}
 	s.server = grpc.NewServer(append(gopts, s.opts.serverOpts...)...)
+	if s.opts.reflection {
+		reflection.Register(s.server)
+	}
 	return s, nil
 }
 
@@ -100,13 +116,7 @@ func (s *service) run() error {
 			return err
 		}
 	}
-	var err error
 	s.running = true
-	s.list, err = net.Listen("tcp", s.opts.address)
-	if err != nil {
-		s.mu.Unlock()
-		return err
-	}
 	s.opts.address = s.list.Addr().String()
 	errs := make(chan error)
 	go func() {
@@ -130,7 +140,7 @@ func (s *service) Start() error {
 func (s *service) Stop() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if ! s.running {
+	if !s.running {
 		return nil
 	}
 	for i := range s.opts.beforeStop {

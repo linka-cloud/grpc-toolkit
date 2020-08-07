@@ -10,5 +10,6 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.6.2
+	go.uber.org/multierr v1.1.0
 	google.golang.org/grpc v1.26.0
 )

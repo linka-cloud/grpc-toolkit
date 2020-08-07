@@ -6,10 +6,12 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"reflect"
 
 	"github.com/jinzhu/gorm"
+	"go.uber.org/multierr"
 	"google.golang.org/grpc"
+	
+	"gitlab.bertha.cloud/partitio/lab/grpc/certs"
 )
 
 /*
@@ -63,10 +65,12 @@ type Options interface {
 	Context() context.Context
 	Name() string
 	Address() string
+	Reflection() bool
+	Secure() bool
 	CACert() string
 	Cert() string
 	Key() string
-	TLSConfig() tls.Config
+	TLSConfig() *tls.Config
 	DB() *gorm.DB
 	BeforeStart() []func() error
 	AfterStart() []func() error
@@ -120,6 +124,18 @@ func WithAddress(addr string) Option {
 	}
 }
 
+func WithReflection(r bool) Option {
+	return func(o *options) {
+		o.reflection = r
+	}
+}
+
+func WithSecure(s bool) Option {
+	return func(o *options) {
+		o.secure = s
+	}
+}
+
 func WithGRPCServerOpts(opts ...grpc.ServerOption) Option {
 	return func(o *options) {
 		o.serverOpts = append(o.serverOpts, opts...)
@@ -148,15 +164,13 @@ func WithDB(dialect string, args ...interface{}) Option {
 	db, err := gorm.Open(dialect, args...)
 	return func(o *options) {
 		o.db = db
-		o.error = err
+		o.error = multierr.Append(o.error, err)
 	}
 }
 
 func WithTLSConfig(conf *tls.Config) Option {
 	return func(o *options) {
-		if conf != nil {
-			o.tlsConfig = *conf
-		}
+		o.tlsConfig = conf
 	}
 }
 
@@ -217,14 +231,16 @@ func WithSubscriberInterceptor(w ...interface{}) Option {
 }
 
 type options struct {
-	ctx       context.Context
-	name      string
-	address   string
-	caCert    string
-	cert      string
-	key       string
-	tlsConfig tls.Config
-	db        *gorm.DB
+	ctx        context.Context
+	name       string
+	address    string
+	secure     bool
+	reflection bool
+	caCert     string
+	cert       string
+	key        string
+	tlsConfig  *tls.Config
+	db         *gorm.DB
 
 	beforeStart []func() error
 	afterStart  []func() error
@@ -254,6 +270,14 @@ func (o *options) Address() string {
 	return o.address
 }
 
+func (o *options) Reflection() bool {
+	return o.reflection
+}
+
+func (o *options) Secure() bool {
+	return o.secure
+}
+
 func (o *options) CACert() string {
 	return o.caCert
 }
@@ -266,7 +290,7 @@ func (o *options) Key() string {
 	return o.key
 }
 
-func (o *options) TLSConfig() tls.Config {
+func (o *options) TLSConfig() *tls.Config {
 	return o.tlsConfig
 }
 
@@ -311,7 +335,21 @@ func (o *options) StreamClientInterceptors() []grpc.StreamClientInterceptor {
 }
 
 func (o *options) parseTLSConfig() error {
-	if o.hasTLSConfig() {
+	if (o.tlsConfig != nil) {
+		return nil
+	}
+	if !o.hasTLSConfig() {
+		if !o.secure {
+			return nil
+		}
+		cert, err := certs.New(o.address, "localhost", "127.0.0.1", o.name)
+		if err != nil {
+			return err
+		}
+		o.tlsConfig = &tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true,
+		}
 		return nil
 	}
 	caCert, err := ioutil.ReadFile(o.caCert)
@@ -327,15 +365,13 @@ func (o *options) parseTLSConfig() error {
 	if err != nil {
 		return err
 	}
-	o.tlsConfig = tls.Config{
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientCAs:    caCertPool,
-		RootCAs:      caCertPool,
+	o.tlsConfig = &tls.Config{
 		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
 	}
 	return nil
 }
 
 func (o *options) hasTLSConfig() bool {
-	return reflect.DeepEqual(o.tlsConfig, tls.Config{})
+	return o.caCert != "" && o.cert != "" && o.key != "" && o.tlsConfig == nil
 }
