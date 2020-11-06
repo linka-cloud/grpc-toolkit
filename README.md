@@ -31,3 +31,9 @@ Features:
     - [ ] tracing
     - [ ] metrics
 - [ ] broker, based on nats-streaming
+
+### Used modules:
+- https://github.com/grpc-ecosystem/go-grpc-middleware
+- https://github.com/grpc-ecosystem/grpc-opentracing
+- https://github.com/grpc-ecosystem/go-grpc-prometheus
+- https://github.com/grpc-ecosystem/grpc-gateway
