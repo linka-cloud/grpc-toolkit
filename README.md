@@ -1,0 +1,33 @@
+# gRPC 
+
+A utility lib, implementing some of the go-micro patterns with gRPC.
+
+Features:
+- [x] simple configuration with options
+- [x] embeded gorm database with options (branch db)
+- [x] simple TLS configuration
+- [ ] TLS auth
+- [ ] client connection pool
+- [ ] registry / resolver resolution
+    - [ ] mdns
+    - [ ] kubernetes
+- [ ] default interceptors implementation: 
+    - [ ] validation
+    - [ ] health
+    - [ ] context logger
+    - [ ] sentry
+    - [ ] rate-limiting
+    - [ ] auth claim in context
+    - [ ] recovery
+    - [ ] tracing (open-tracing)
+    - [ ] metrics (prometheus)
+    - [ ] retries
+    - [ ] context DB / transaction
+    - ...
+- [ ] api gateway with middleware:
+    - [ ] auth
+    - [ ] cors
+    - [ ] logging
+    - [ ] tracing
+    - [ ] metrics
+- [ ] broker, based on nats-streaming
