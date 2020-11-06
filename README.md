@@ -1,6 +1,6 @@
 # gRPC 
 
-A utility lib, implementing some of the go-micro patterns with gRPC.
+A utility module, implementing some of the [go-micro](https://github.com/micro/go-micro) patterns with pure gRPC ecosystem modules.
 
 Features:
 - [x] simple configuration with options
