@@ -160,8 +160,6 @@ func (s *service) Stop() error {
 }
 
 func (s *service) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	err := multierr.Combine(s.Stop())
 	if s.opts.db != nil {
 		err = multierr.Append(s.opts.db.Close(), err)
