@@ -1,6 +1,11 @@
 # gRPC 
 
-A utility module, implementing some of the [go-micro](https://github.com/micro/go-micro) patterns with pure gRPC ecosystem modules.
+A utility module, largely taken from the [go-micro](https://github.com/micro/go-micro) patterns (and a good amount of code too...) 
+with pure gRPC ecosystem modules.
+
+Principles:
+- Pluggable
+- No singleton
 
 Features:
 - [x] simple configuration with options
@@ -28,7 +33,7 @@ Features:
     - [ ] auth
     - [ ] cors
     - [ ] logging
-    - [ ] tracing
+    - [ ] tracing
     - [ ] metrics
 - [ ] broker, based on nats-streaming
 

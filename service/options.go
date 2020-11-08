@@ -6,12 +6,15 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net"
 
 	"github.com/jinzhu/gorm"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
-	
+
 	"gitlab.bertha.cloud/partitio/lab/grpc/certs"
+	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
+	"gitlab.bertha.cloud/partitio/lab/grpc/utils/addr"
 )
 
 /*
@@ -27,32 +30,34 @@ GLOBAL OPTIONS:
 	--ca_cert				  CA_CERT
 	--server_cert			  SERVER_CERT
 	--server_key			  SERVER_KEY
-	
+
    	--register_ttl            REGISTER_TTL
 	--register_interval       REGISTER_INTERVAL
-	
-	--server_address          SERVER_ADDRESS	   
+
+	--server_address          SERVER_ADDRESS
    	--server_name             SERVER_NAME
-	   
+
 	--broker                  BROKER
    	--broker_address          BROKER_ADDRESS
-	   
+
 	--registry                REGISTRY
    	--registry_address        REGISTRY_ADDRESS
-	   
+
 	--db_path                 DB_PATH
 */
 
 type Options interface {
 	Context() context.Context
 	Name() string
+	Version() string
 	Address() string
 	Reflection() bool
-	Secure() bool
 	CACert() string
 	Cert() string
 	Key() string
 	TLSConfig() *tls.Config
+	Secure() bool
+	Registry() registry.Registry
 	DB() *gorm.DB
 	BeforeStart() []func() error
 	AfterStart() []func() error
@@ -87,6 +92,18 @@ type Option func(*options)
 func WithName(name string) Option {
 	return func(o *options) {
 		o.name = name
+	}
+}
+
+func WithVersion(version string) Option {
+	return func(o *options) {
+		o.version = version
+	}
+}
+
+func WithRegistry(registry registry.Registry) Option {
+	return func(o *options) {
+		o.registry = registry
 	}
 }
 
@@ -215,6 +232,7 @@ func WithSubscriberInterceptor(w ...interface{}) Option {
 type options struct {
 	ctx        context.Context
 	name       string
+	version string
 	address    string
 	secure     bool
 	reflection bool
@@ -223,6 +241,8 @@ type options struct {
 	key        string
 	tlsConfig  *tls.Config
 	db         *gorm.DB
+
+	registry registry.Registry
 
 	beforeStart []func() error
 	afterStart  []func() error
@@ -237,11 +257,15 @@ type options struct {
 	clientInterceptors       []grpc.UnaryClientInterceptor
 	streamClientInterceptors []grpc.StreamClientInterceptor
 
-	error error
+	error   error
 }
 
 func (o *options) Name() string {
 	return o.name
+}
+
+func (o *options) Version() string {
+	return o.version
 }
 
 func (o *options) Context() context.Context {
@@ -252,12 +276,12 @@ func (o *options) Address() string {
 	return o.address
 }
 
-func (o *options) Reflection() bool {
-	return o.reflection
+func (o *options) Registry() registry.Registry {
+	return o.registry
 }
 
-func (o *options) Secure() bool {
-	return o.secure
+func (o *options) Reflection() bool {
+	return o.reflection
 }
 
 func (o *options) CACert() string {
@@ -274,6 +298,10 @@ func (o *options) Key() string {
 
 func (o *options) TLSConfig() *tls.Config {
 	return o.tlsConfig
+}
+
+func (o *options) Secure() bool {
+	return o.secure
 }
 
 func (o *options) DB() *gorm.DB {
@@ -317,20 +345,36 @@ func (o *options) StreamClientInterceptors() []grpc.StreamClientInterceptor {
 }
 
 func (o *options) parseTLSConfig() error {
-	if (o.tlsConfig != nil) {
+	if o.tlsConfig != nil {
 		return nil
 	}
 	if !o.hasTLSConfig() {
 		if !o.secure {
 			return nil
 		}
-		cert, err := certs.New(o.address, "localhost", "127.0.0.1", o.name)
+		var hosts []string
+		if host, _, err := net.SplitHostPort(o.address); err == nil {
+			if len(host) == 0 {
+				hosts = addr.IPs()
+			} else {
+				hosts = []string{host}
+			}
+		}
+		for i, h := range hosts {
+			a, err := addr.Extract(h)
+			if err != nil {
+				return err
+			}
+			hosts[i] = a
+		}
+		// generate a certificate
+		cert, err := certs.New(hosts...)
 		if err != nil {
 			return err
 		}
 		o.tlsConfig = &tls.Config{
-			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: true,
+			Certificates: []tls.Certificate{cert},
+			ClientAuth:   tls.NoClientCert,
 		}
 		return nil
 	}
