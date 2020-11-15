@@ -239,23 +239,23 @@ func (s *service) Start() error {
 }
 
 func (s *service) Stop() error {
-	defer close(s.closed)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.running {
 		return nil
-	}
-	if err := s.opts.registry.Deregister(s.regSvc); err != nil {
-		logrus.Errorf("failed to deregister service: %v", err)
 	}
 	for i := range s.opts.beforeStop {
 		if err := s.opts.beforeStop[i](); err != nil {
 			return err
 		}
 	}
+	if err := s.opts.registry.Deregister(s.regSvc); err != nil {
+		logrus.Errorf("failed to deregister service: %v", err)
+	}
+	defer close(s.closed)
 	s.server.GracefulStop()
-	s.cancel()
 	s.running = false
+	s.cancel()
 	for i := range s.opts.afterStop {
 		if err := s.opts.afterStop[i](); err != nil {
 			return err
