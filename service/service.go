@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,6 +36,8 @@ type Service interface {
 	Stop() error
 	Close() error
 	Cmd() *cobra.Command
+
+	RegisterService(desc *grpc.ServiceDesc, impl interface{})
 }
 
 func New(opts ...Option) (Service, error) {
@@ -54,7 +59,9 @@ type service struct {
 }
 
 func newService(opts ...Option) (*service, error) {
-	cmd.ParseFlags(os.Args)
+	if err := cmd.ParseFlags(os.Args); err != nil {
+		return nil, err
+	}
 	s := &service{
 		opts: parseFlags(NewOptions()),
 		cmd:  cmd,
@@ -215,6 +222,7 @@ func (s *service) run() error {
 		return err
 	}
 	s.running = true
+
 	errs := make(chan error)
 	go func() {
 		errs <- s.server.Serve(s.list)
@@ -227,11 +235,19 @@ func (s *service) run() error {
 		}
 	}
 	s.mu.Unlock()
-	if err :=  <-errs; err != nil{
-		logrus.Error(err)
-		return err
+	sigs := s.notify()
+	select {
+	case sig := <-sigs:
+		fmt.Println()
+		logrus.Warnf("received %v", sig)
+		return s.Close()
+	case err := <-errs:
+		if err != nil{
+			logrus.Error(err)
+			return err
+		}
+		return nil
 	}
-	return nil
 }
 
 func (s *service) Start() error {
@@ -253,7 +269,21 @@ func (s *service) Stop() error {
 		logrus.Errorf("failed to deregister service: %v", err)
 	}
 	defer close(s.closed)
-	s.server.GracefulStop()
+	sigs := s.notify()
+	done := make(chan struct{})
+	go func() {
+		logrus.Warn("shutting down gracefully")
+		s.server.GracefulStop()
+		close(done)
+	}()
+	select {
+	case sig := <-sigs:
+		fmt.Println()
+		logrus.Warnf("received %v", sig)
+		logrus.Warn("forcing shutdown")
+		s.server.Stop()
+	case <-done:
+	}
 	s.running = false
 	s.cancel()
 	for i := range s.opts.afterStop {
@@ -265,6 +295,10 @@ func (s *service) Stop() error {
 	return nil
 }
 
+func (s *service) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
+	s.server.RegisterService(desc, impl)
+}
+
 func (s *service) Close() error {
 	err := multierr.Combine(s.Stop())
 	if s.opts.db != nil {
@@ -272,4 +306,10 @@ func (s *service) Close() error {
 	}
 	<-s.closed
 	return err
+}
+
+func (s *service) notify() <-chan os.Signal {
+	sigs := make(chan os.Signal, 2)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT)
+	return sigs
 }

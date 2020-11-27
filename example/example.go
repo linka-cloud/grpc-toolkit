@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -11,7 +14,9 @@ import (
 	"gitlab.bertha.cloud/partitio/lab/grpc/service"
 )
 
-type GreeterHandler struct{}
+type GreeterHandler struct{
+	UnimplementedGreeterServer
+}
 
 func hello(name string) string {
 	return fmt.Sprintf("Hello %s !", name)
@@ -23,9 +28,10 @@ func (g *GreeterHandler) SayHello(ctx context.Context, req *HelloRequest) (*Hell
 
 func (g *GreeterHandler) SayHelloStream(req *HelloStreamRequest, s Greeter_SayHelloStreamServer) error {
 	for i := int64(0); i < req.Count; i++ {
-		if err := s.Send(&HelloReply{Message: hello(req.Name)}); err != nil {
+		if err := s.Send(&HelloReply{Message: fmt.Sprintf("Hello %s (%d)!", req.Name, i+1)}); err != nil {
 			return err
 		}
+		time.Sleep(time.Second)
 	}
 	return nil
 }
@@ -60,7 +66,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	RegisterGreeterServer(svc.Server(), &GreeterHandler{})
+	RegisterGreeterServer(svc, &GreeterHandler{})
 	go func() {
 		if err := svc.Start(); err != nil {
 			panic(err)
@@ -68,23 +74,35 @@ func main() {
 	}()
 	<-ready
 	s, err := client.New(
+		client.WithName("greeter"),
+		client.WithVersion("v0.0.1"),
 		client.WithRegistry(mdns.NewRegistry()),
 		client.WithSecure(true),
 	)
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	conn, err := s.Dial("greeter","v0.0.1")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	g := NewGreeterClient(conn)
+	g := NewGreeterClient(s)
 	defer cancel()
 	res, err := g.SayHello(context.Background(), &HelloRequest{Name: "test"})
 	if err != nil {
 		logrus.Fatal(err)
 	}
 	logrus.Infof("received message: %s", res.Message)
+	stream, err := g.SayHelloStream(context.Background(), &HelloStreamRequest{Name: "test", Count: 10})
+	if err != nil {
+	    logrus.Fatal(err)
+	}
+	for {
+		m, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+		    logrus.Fatal(err)
+		}
+		logrus.Infof("received stream message: %s", m.Message)
+	}
 	cancel()
 	<-done
 }

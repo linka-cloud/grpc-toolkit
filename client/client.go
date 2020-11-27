@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"strings"
@@ -13,7 +14,7 @@ import (
 )
 
 type Client interface {
-	Dial(name string, version string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
+	grpc.ClientConnInterface
 }
 
 func New(opts ...Option) (Client, error) {
@@ -26,28 +27,37 @@ func New(opts ...Option) (Client, error) {
 	}
 	resolver.Register(c.opts.registry.ResolverBuilder())
 	c.pool = newPool(DefaultPoolSize, DefaultPoolTTL, DefaultPoolMaxIdle, DefaultPoolMaxStreams)
-	return c, nil
-}
-
-type client struct {
-	pool *pool
-	opts *options
-}
-
-func (c client) Dial(name, version string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	if c.opts.tlsConfig == nil && c.opts.Secure() {
 		c.opts.tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	if c.opts.tlsConfig != nil {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(c.opts.tlsConfig)))
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(c.opts.tlsConfig)))
 	}
-	addr := fmt.Sprintf("%s:///%s", c.opts.registry.String(), name)
-	if version != "" {
-		addr = addr + ":" + strings.TrimSpace(version)
+	c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)
+	if c.opts.version != "" {
+		c.addr = c.addr + ":" + strings.TrimSpace(c.opts.version)
 	}
-	pc, err := c.pool.getConn(addr, opts...)
+	return c, nil
+}
+
+type client struct {
+	addr string
+	pool *pool
+	opts *options
+}
+
+func (c *client) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+	pc, err := c.pool.getConn(c.addr, c.opts.dialOptions...)
 	if err != nil {
-	  return nil, err
+		return err
 	}
-	return pc.ClientConn, nil
+	return pc.Invoke(ctx, method, args, reply, opts...)
+}
+
+func (c *client) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	pc, err := c.pool.getConn(c.addr, c.opts.dialOptions...)
+	if err != nil {
+		return nil, err
+	}
+	return pc.NewStream(ctx, desc, method, opts...)
 }
