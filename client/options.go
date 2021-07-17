@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
+	"go.linka.cloud/grpc/registry"
 )
 
 type Options interface {

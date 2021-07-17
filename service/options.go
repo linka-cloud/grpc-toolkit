@@ -12,9 +12,9 @@ import (
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/certs"
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
-	"gitlab.bertha.cloud/partitio/lab/grpc/utils/addr"
+	"go.linka.cloud/grpc/certs"
+	"go.linka.cloud/grpc/registry"
+	"go.linka.cloud/grpc/utils/addr"
 )
 
 /*

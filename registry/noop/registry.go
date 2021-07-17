@@ -3,8 +3,8 @@ package noop
 import (
 	"google.golang.org/grpc/resolver"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
-	resolver2 "gitlab.bertha.cloud/partitio/lab/grpc/resolver"
+	"go.linka.cloud/grpc/registry"
+	resolver2 "go.linka.cloud/grpc/resolver"
 )
 
 

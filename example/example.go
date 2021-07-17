@@ -9,9 +9,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/client"
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry/mdns"
-	"gitlab.bertha.cloud/partitio/lab/grpc/service"
+	"go.linka.cloud/grpc/client"
+	"go.linka.cloud/grpc/registry/mdns"
+	"go.linka.cloud/grpc/service"
 )
 
 type GreeterHandler struct{

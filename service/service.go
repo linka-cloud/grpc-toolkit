@@ -21,11 +21,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry/noop"
-	"gitlab.bertha.cloud/partitio/lab/grpc/utils/addr"
-	"gitlab.bertha.cloud/partitio/lab/grpc/utils/backoff"
-	net2 "gitlab.bertha.cloud/partitio/lab/grpc/utils/net"
+	"go.linka.cloud/grpc/registry"
+	"go.linka.cloud/grpc/registry/noop"
+	"go.linka.cloud/grpc/utils/addr"
+	"go.linka.cloud/grpc/utils/backoff"
+	net2 "go.linka.cloud/grpc/utils/net"
 )
 
 type Service interface {

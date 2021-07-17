@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc/resolver"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
+	"go.linka.cloud/grpc/registry"
 )
 
 func New(reg registry.Registry) resolver.Builder {

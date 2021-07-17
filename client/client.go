@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/resolver"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry/noop"
+	"go.linka.cloud/grpc/registry/noop"
 )
 
 type Client interface {

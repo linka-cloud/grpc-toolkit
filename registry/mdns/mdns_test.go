@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"gitlab.bertha.cloud/partitio/lab/grpc/registry"
+	"go.linka.cloud/grpc/registry"
 )
 
 func TestRegistry(t *testing.T) {
