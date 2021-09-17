@@ -33,6 +33,9 @@ func New(opts ...Option) (Client, error) {
 	if c.opts.tlsConfig != nil {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(c.opts.tlsConfig)))
 	}
+	if !c.opts.secure {
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithInsecure())
+	}
 	c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)
 	if c.opts.version != "" {
 		c.addr = c.addr + ":" + strings.TrimSpace(c.opts.version)

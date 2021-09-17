@@ -54,7 +54,7 @@ func (l *logger) WithField(key string, value interface{}) Logger {
 }
 
 func (l *logger) WithFields(kv ...string) Logger {
-	for i := 0; i < len(kv); i+=2 {
+	for i := 0; i < len(kv); i += 2 {
 		l.FieldLogger = l.FieldLogger.WithField(kv[i], kv[i+1])
 	}
 	return l

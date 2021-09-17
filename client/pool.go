@@ -1,6 +1,6 @@
 /*
 Taken from the https://github.com/micro/go-micro/client/grpc
- */
+*/
 
 package client
 

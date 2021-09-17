@@ -17,7 +17,7 @@ type builder struct {
 }
 
 func (r builder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
-	rslvr :=  &resolvr{reg: r.reg, target: target, cc: cc}
+	rslvr := &resolvr{reg: r.reg, target: target, cc: cc}
 	go rslvr.run()
 	return rslvr, nil
 }

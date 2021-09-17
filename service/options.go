@@ -7,13 +7,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"strings"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/jinzhu/gorm"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc/certs"
 	"go.linka.cloud/grpc/registry"
+	"go.linka.cloud/grpc/transport"
 	"go.linka.cloud/grpc/utils/addr"
 )
 
@@ -46,29 +50,51 @@ GLOBAL OPTIONS:
 	--db_path                 DB_PATH
 */
 
+type RegisterGatewayFunc func(ctx context.Context, mux *runtime.ServeMux, cc grpc.ClientConnInterface) error
+
 type Options interface {
 	Context() context.Context
 	Name() string
 	Version() string
 	Address() string
+
 	Reflection() bool
+
 	CACert() string
 	Cert() string
 	Key() string
 	TLSConfig() *tls.Config
 	Secure() bool
+
 	Registry() registry.Registry
+
 	DB() *gorm.DB
+
 	BeforeStart() []func() error
 	AfterStart() []func() error
 	BeforeStop() []func() error
 	AfterStop() []func() error
+
 	ServerOpts() []grpc.ServerOption
 	ServerInterceptors() []grpc.UnaryServerInterceptor
 	StreamServerInterceptors() []grpc.StreamServerInterceptor
+
 	ClientInterceptors() []grpc.UnaryClientInterceptor
 	StreamClientInterceptors() []grpc.StreamClientInterceptor
-	Defaults()
+
+	// TODO(adphi): CORS for http handler
+
+	GRPCWeb() bool
+	GRPCWebPrefix() string
+	GRPCWebOpts() []grpcweb.Option
+
+	Gateway() bool
+	GatewayPrefix() string
+	GatewayOpts() []runtime.ServeMuxOption
+
+	// TODO(adphi): metrics
+
+	Default()
 }
 
 func NewOptions() *options {
@@ -78,12 +104,15 @@ func NewOptions() *options {
 	}
 }
 
-func (o *options) Defaults() {
+func (o *options) Default() {
 	if o.ctx == nil {
 		o.ctx = context.Background()
 	}
 	if o.address == "" {
 		o.address = "0.0.0.0:0"
+	}
+	if o.transport == nil {
+		o.transport = &grpc.Server{}
 	}
 }
 
@@ -229,20 +258,60 @@ func WithSubscriberInterceptor(w ...interface{}) Option {
 	}
 }
 
-type options struct {
-	ctx        context.Context
-	name       string
-	version string
-	address    string
-	secure     bool
-	reflection bool
-	caCert     string
-	cert       string
-	key        string
-	tlsConfig  *tls.Config
-	db         *gorm.DB
+func WithGRPCWeb(b bool) Option {
+	return func(o *options) {
+		o.grpcWeb = b
+	}
+}
 
-	registry registry.Registry
+func WithGRPCWebPrefix(prefix string) Option {
+	return func(o *options) {
+		o.grpcWebPrefix = strings.TrimSuffix(prefix, "/")
+	}
+}
+
+func WithGRPCWebOpts(opts ...grpcweb.Option) Option {
+	return func(o *options) {
+		o.grpcWebOpts = opts
+	}
+}
+
+func WithGateway(fn RegisterGatewayFunc) Option {
+	return func(o *options) {
+		o.gateway = fn
+	}
+}
+
+func WithGatewayPrefix(prefix string) Option {
+	return func(o *options) {
+		o.gatewayPrefix = strings.TrimSuffix(prefix, "/")
+	}
+}
+
+func WithGatewayOpts(opts ...runtime.ServeMuxOption) Option {
+	return func(o *options) {
+		o.gatewayOpts = opts
+	}
+}
+
+type options struct {
+	ctx     context.Context
+	name    string
+	version string
+	address string
+
+	reflection bool
+
+	secure    bool
+	caCert    string
+	cert      string
+	key       string
+	tlsConfig *tls.Config
+
+	db *gorm.DB
+
+	transport transport.Transport
+	registry  registry.Registry
 
 	beforeStart []func() error
 	afterStart  []func() error
@@ -257,7 +326,15 @@ type options struct {
 	clientInterceptors       []grpc.UnaryClientInterceptor
 	streamClientInterceptors []grpc.StreamClientInterceptor
 
-	error   error
+	grpcWeb       bool
+	grpcWebOpts   []grpcweb.Option
+	grpcWebPrefix string
+
+	gateway     RegisterGatewayFunc
+	gatewayOpts []runtime.ServeMuxOption
+
+	error         error
+	gatewayPrefix string
 }
 
 func (o *options) Name() string {
@@ -342,6 +419,30 @@ func (o *options) ClientInterceptors() []grpc.UnaryClientInterceptor {
 
 func (o *options) StreamClientInterceptors() []grpc.StreamClientInterceptor {
 	return o.streamClientInterceptors
+}
+
+func (o *options) GRPCWeb() bool {
+	return o.grpcWeb
+}
+
+func (o *options) GRPCWebPrefix() string {
+	return o.grpcWebPrefix
+}
+
+func (o *options) GRPCWebOpts() []grpcweb.Option {
+	return o.grpcWebOpts
+}
+
+func (o *options) Gateway() bool {
+	return o.gateway != nil
+}
+
+func (o *options) GatewayPrefix() string {
+	return o.gatewayPrefix
+}
+
+func (o *options) GatewayOpts() []runtime.ServeMuxOption {
+	return o.gatewayOpts
 }
 
 func (o *options) parseTLSConfig() error {

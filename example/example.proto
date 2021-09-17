@@ -2,10 +2,17 @@ syntax = "proto3";
 
 package helloworld;
 
-option go_package = "example;main";
+option go_package = "go.linka.cloud/grpc/example;main";
+
+import "google/api/annotations.proto";
 
 service Greeter {
-    rpc SayHello (HelloRequest) returns (HelloReply) {}
+    rpc SayHello (HelloRequest) returns (HelloReply) {
+        option (google.api.http) = {
+            post: "/api/v1/greeter/hello"
+            body: "*"
+        };
+    }
     rpc SayHelloStream (HelloStreamRequest) returns (stream HelloReply) {}
 }
 

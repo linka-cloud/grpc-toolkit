@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -11,21 +13,19 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fullstorydev/grpchan/inprocgrpc"
 	"github.com/google/uuid"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
+	"github.com/soheilhy/cmux"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
 	"go.linka.cloud/grpc/registry"
 	"go.linka.cloud/grpc/registry/noop"
-	"go.linka.cloud/grpc/utils/addr"
-	"go.linka.cloud/grpc/utils/backoff"
-	net2 "go.linka.cloud/grpc/utils/net"
 )
 
 type Service interface {
@@ -45,13 +45,17 @@ func New(opts ...Option) (Service, error) {
 }
 
 type service struct {
-	cmd     *cobra.Command
-	opts    *options
-	cancel  context.CancelFunc
+	cmd    *cobra.Command
+	opts   *options
+	cancel context.CancelFunc
+
 	server  *grpc.Server
-	list    net.Listener
 	mu      sync.Mutex
 	running bool
+
+	mux    *http.ServeMux
+	// inproc Channel is used to serve grpc gateway
+	inproc *inprocgrpc.Channel
 
 	id     string
 	regSvc *registry.Service
@@ -63,9 +67,11 @@ func newService(opts ...Option) (*service, error) {
 		return nil, err
 	}
 	s := &service{
-		opts: parseFlags(NewOptions()),
-		cmd:  cmd,
-		id:   uuid.New().String(),
+		opts:   parseFlags(NewOptions()),
+		cmd:    cmd,
+		id:     uuid.New().String(),
+		mux:    http.NewServeMux(),
+		inproc: &inprocgrpc.Channel{},
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -87,11 +93,7 @@ func newService(opts ...Option) (*service, error) {
 	if s.opts.registry == nil {
 		s.opts.registry = noop.New()
 	}
-	var err error
-	s.list, err = net.Listen("tcp", s.opts.address)
-	if err != nil {
-		return nil, err
-	}
+
 	if err := s.opts.parseTLSConfig(); err != nil {
 		return nil, err
 	}
@@ -102,18 +104,24 @@ func newService(opts ...Option) (*service, error) {
 		}
 		return s.run()
 	}
+	ui := grpcmiddleware.ChainUnaryServer(s.opts.serverInterceptors...)
+	s.inproc = s.inproc.WithServerUnaryInterceptor(ui)
+
+	si := grpcmiddleware.ChainStreamServer(/*TODO(adphi): add to options*/)
+	s.inproc = s.inproc.WithServerStreamInterceptor(si)
+
 	gopts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(
-			grpcmiddleware.ChainUnaryServer(s.opts.serverInterceptors...),
-		),
-	}
-	if s.opts.tlsConfig != nil {
-		gopts = append(gopts, grpc.Creds(credentials.NewTLS(s.opts.tlsConfig)))
+		grpc.StreamInterceptor(si),
+		grpc.UnaryInterceptor(ui),
 	}
 	s.server = grpc.NewServer(append(gopts, s.opts.serverOpts...)...)
 	if s.opts.reflection {
 		reflection.Register(s.server)
 	}
+	if err := s.gateway(s.opts.gatewayOpts...); err != nil {
+		return nil, err
+	}
+	// we do not configure grpc web here as the grpc handlers are not yet registered
 	return s, nil
 }
 
@@ -133,99 +141,69 @@ func (s *service) Cmd() *cobra.Command {
 	return s.cmd
 }
 
-func (s *service) register() error {
-	const (
-		defaultRegisterInterval = time.Second * 30
-		defaultRegisterTTL      = time.Second * 90
-	)
-	regFunc := func(service *registry.Service) error {
-		var regErr error
-
-		for i := 0; i < 3; i++ {
-			// set the ttl
-			rOpts := []registry.RegisterOption{registry.RegisterTTL(defaultRegisterTTL)}
-			// attempt to register
-			if err := s.opts.Registry().Register(service, rOpts...); err != nil {
-				// set the error
-				regErr = err
-				// backoff then retry
-				time.Sleep(backoff.Do(i + 1))
-				continue
-			}
-			// success so nil error
-			regErr = nil
-			break
-		}
-
-		return regErr
-	}
-
-	var err error
-	var advt, host, port string
-
-	//// check the advertise address first
-	//// if it exists then use it, otherwise
-	//// use the address
-	//if len(config.Advertise) > 0 {
-	//	advt = config.Advertise
-	//} else {
-		advt = s.opts.address
-	//}
-
-	if cnt := strings.Count(advt, ":"); cnt >= 1 {
-		// ipv6 address in format [host]:port or ipv4 host:port
-		host, port, err = net.SplitHostPort(advt)
-		if err != nil {
-			return err
-		}
-	} else {
-		host = s.opts.address
-	}
-
-	addr, err := addr.Extract(host)
-	if err != nil {
-		return err
-	}
-
-	// register service
-	node := &registry.Node{
-		Id:      s.opts.name + "-" + s.id,
-		Address: net2.HostPort(addr, port),
-	}
-
-	s.regSvc = &registry.Service{
-		Name: s.opts.name,
-		Version:   s.opts.version,
-		Nodes: []*registry.Node{node},
-	}
-
-	// register the service
-	if err := regFunc(s.regSvc); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *service) run() error {
 	s.mu.Lock()
 	s.closed = make(chan struct{})
+
+	// configure grpc web now that we are ready to go
+	if err := s.grpcWeb(s.opts.grpcWebOpts...); err != nil {
+		return err
+	}
+
+	lis, err := net.Listen("tcp", s.opts.address)
+	if err != nil {
+		return err
+	}
+	if s.opts.tlsConfig != nil {
+		lis = tls.NewListener(lis, s.opts.tlsConfig)
+	}
+
+	s.opts.address = lis.Addr().String()
+
+	mux := cmux.New(lis)
+	mux.SetReadTimeout(5 * time.Second)
+
+	gLis := mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+	hList := mux.Match(cmux.Any())
+
 	for i := range s.opts.beforeStart {
 		if err := s.opts.beforeStart[i](); err != nil {
 			s.mu.Unlock()
 			return err
 		}
 	}
-	s.opts.address = s.list.Addr().String()
 
 	if err := s.register(); err != nil {
 		return err
 	}
 	s.running = true
 
-	errs := make(chan error)
+	errs := make(chan error, 3)
+
+	hServer := &http.Server{
+		Handler: s.mux,
+	}
+	if s.opts.Gateway() || s.opts.grpcWeb {
+		go func() {
+			errs <- hServer.Serve(hList)
+			hServer.Shutdown(s.opts.ctx)
+		}()
+	}
 	go func() {
-		errs <- s.server.Serve(s.list)
+		errs <- s.server.Serve(gLis)
+	}()
+
+	go func() {
+		if err := mux.Serve(); err != nil {
+			// TODO(adphi): find more elegant solution
+			if ignoreMuxError(err) {
+				errs <- nil
+				return
+			}
+			errs <- err
+			return
+		}
+		errs <- nil
 	}()
 	for i := range s.opts.afterStart {
 		if err := s.opts.afterStart[i](); err != nil {
@@ -242,7 +220,7 @@ func (s *service) run() error {
 		logrus.Warnf("received %v", sig)
 		return s.Close()
 	case err := <-errs:
-		if err != nil{
+		if err != nil {
 			logrus.Error(err)
 			return err
 		}
@@ -297,6 +275,7 @@ func (s *service) Stop() error {
 
 func (s *service) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	s.server.RegisterService(desc, impl)
+	s.inproc.RegisterService(desc, impl)
 }
 
 func (s *service) Close() error {
@@ -312,4 +291,12 @@ func (s *service) notify() <-chan os.Signal {
 	sigs := make(chan os.Signal, 2)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT)
 	return sigs
+}
+
+func ignoreMuxError(err error) bool {
+	if err == nil {
+		return true
+	}
+	return strings.Contains(err.Error(), "use of closed network connection") ||
+		strings.Contains(err.Error(), "mux: server closed")
 }

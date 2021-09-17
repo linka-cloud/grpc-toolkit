@@ -7,12 +7,11 @@ import (
 	resolver2 "go.linka.cloud/grpc/resolver"
 )
 
-
 func New() registry.Registry {
 	return &noop{}
 }
 
-type noop struct {}
+type noop struct{}
 
 func (n noop) ResolverBuilder() resolver.Builder {
 	return resolver2.New(n)
@@ -50,11 +49,10 @@ func (n noop) String() string {
 	return "passthroug"
 }
 
-type noopWatcher struct {}
+type noopWatcher struct{}
 
 func (n noopWatcher) Next() (*registry.Result, error) {
 	return &registry.Result{}, nil
 }
 
 func (n noopWatcher) Stop() {}
-

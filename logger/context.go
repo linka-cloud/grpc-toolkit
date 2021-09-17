@@ -42,4 +42,3 @@ func From(ctx context.Context) Logger {
 	defaultLogger = logr
 	return defaultLogger
 }
-

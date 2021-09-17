@@ -4,6 +4,7 @@ package main
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -11,6 +12,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
 // GreeterClient is the client API for Greeter service.
@@ -39,7 +41,7 @@ func (c *greeterClient) SayHello(ctx context.Context, in *HelloRequest, opts ...
 }
 
 func (c *greeterClient) SayHelloStream(ctx context.Context, in *HelloStreamRequest, opts ...grpc.CallOption) (Greeter_SayHelloStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Greeter_serviceDesc.Streams[0], "/helloworld.Greeter/SayHelloStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &Greeter_ServiceDesc.Streams[0], "/helloworld.Greeter/SayHelloStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +101,7 @@ type UnsafeGreeterServer interface {
 }
 
 func RegisterGreeterServer(s grpc.ServiceRegistrar, srv GreeterServer) {
-	s.RegisterService(&_Greeter_serviceDesc, srv)
+	s.RegisterService(&Greeter_ServiceDesc, srv)
 }
 
 func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -141,7 +143,10 @@ func (x *greeterSayHelloStreamServer) Send(m *HelloReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-var _Greeter_serviceDesc = grpc.ServiceDesc{
+// Greeter_ServiceDesc is the grpc.ServiceDesc for Greeter service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Greeter_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "helloworld.Greeter",
 	HandlerType: (*GreeterServer)(nil),
 	Methods: []grpc.MethodDesc{

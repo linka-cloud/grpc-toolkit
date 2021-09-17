@@ -12,9 +12,9 @@ var cmd = &cobra.Command{
 
 const (
 	serverAddress = "server_address"
-	
-	secure        = "secure"
-	reflect       = "reflect"
+
+	secure  = "secure"
+	reflect = "reflect"
 
 	caCert     = "ca_cert"
 	serverCert = "server_cert"

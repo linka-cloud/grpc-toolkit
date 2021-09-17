@@ -29,10 +29,10 @@ type Registry interface {
 }
 
 type Service struct {
-	Name      string            `json:"name"`
-	Version   string            `json:"version"`
-	Metadata  map[string]string `json:"metadata"`
-	Nodes     []*Node           `json:"nodes"`
+	Name     string            `json:"name"`
+	Version  string            `json:"version"`
+	Metadata map[string]string `json:"metadata"`
+	Nodes    []*Node           `json:"nodes"`
 }
 
 type Node struct {

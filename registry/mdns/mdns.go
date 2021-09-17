@@ -27,9 +27,9 @@ var (
 )
 
 type mdnsTxt struct {
-	Service   string
-	Version   string
-	Metadata  map[string]string
+	Service  string
+	Version  string
+	Metadata map[string]string
 }
 
 type mdnsEntry struct {
@@ -225,9 +225,9 @@ func (m *mdnsRegistry) Register(service *registry.Service, opts ...registry.Regi
 		}
 
 		txt, err := encode(&mdnsTxt{
-			Service:   service.Name,
-			Version:   service.Version,
-			Metadata:  node.Metadata,
+			Service:  service.Name,
+			Version:  service.Version,
+			Metadata: node.Metadata,
 		})
 
 		if err != nil {
@@ -351,8 +351,8 @@ func (m *mdnsRegistry) GetService(service string, opts ...registry.GetOption) ([
 				s, ok := serviceMap[txt.Version]
 				if !ok {
 					s = &registry.Service{
-						Name:      txt.Service,
-						Version:   txt.Version,
+						Name:    txt.Service,
+						Version: txt.Version,
 					}
 				}
 				addr := ""
@@ -572,8 +572,8 @@ func (m *mdnsWatcher) Next() (*registry.Result, error) {
 			}
 
 			service := &registry.Service{
-				Name:      txt.Service,
-				Version:   txt.Version,
+				Name:    txt.Service,
+				Version: txt.Version,
 			}
 
 			// skip anything without the domain we care about
