@@ -220,7 +220,7 @@ func (s *service) run() error {
 		logrus.Warnf("received %v", sig)
 		return s.Close()
 	case err := <-errs:
-		if err != nil {
+		if err != nil && !ignoreMuxError(err){
 			logrus.Error(err)
 			return err
 		}
