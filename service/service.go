@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"strings"
 	"sync"
 	"syscall"
@@ -17,12 +18,13 @@ import (
 	"github.com/google/uuid"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jinzhu/gorm"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	greflect "google.golang.org/grpc/reflection"
 
 	"go.linka.cloud/grpc/registry"
 	"go.linka.cloud/grpc/registry/noop"
@@ -116,7 +118,7 @@ func newService(opts ...Option) (*service, error) {
 	}
 	s.server = grpc.NewServer(append(gopts, s.opts.serverOpts...)...)
 	if s.opts.reflection {
-		reflection.Register(s.server)
+		greflect.Register(s.server)
 	}
 	if err := s.gateway(s.opts.gatewayOpts...); err != nil {
 		return nil, err
@@ -180,8 +182,24 @@ func (s *service) run() error {
 
 	errs := make(chan error, 3)
 
+	if reflect.DeepEqual(s.opts.cors, cors.Options{}) {
+		s.opts.cors = cors.Options{
+			AllowedHeaders:   []string{"*"},
+			AllowedMethods:   []string{
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodDelete,
+				http.MethodOptions,
+				http.MethodHead,
+			},
+			AllowedOrigins:   []string{"*"},
+			AllowCredentials: true,
+		}
+	}
 	hServer := &http.Server{
-		Handler: s.mux,
+		Handler: cors.New(s.opts.cors).Handler(s.mux),
 	}
 	if s.opts.Gateway() || s.opts.grpcWeb {
 		go func() {

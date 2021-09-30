@@ -12,6 +12,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/jinzhu/gorm"
+	"github.com/rs/cors"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
 
@@ -82,8 +83,8 @@ type Options interface {
 	ClientInterceptors() []grpc.UnaryClientInterceptor
 	StreamClientInterceptors() []grpc.StreamClientInterceptor
 
-	// TODO(adphi): CORS for http handler
 
+	Cors() cors.Options
 	GRPCWeb() bool
 	GRPCWebPrefix() string
 	GRPCWebOpts() []grpcweb.Option
@@ -92,7 +93,7 @@ type Options interface {
 	GatewayPrefix() string
 	GatewayOpts() []runtime.ServeMuxOption
 
-	// TODO(adphi): metrics
+	// TODO(adphi): metrics + tracing
 
 	Default()
 }
@@ -114,6 +115,7 @@ func (o *options) Default() {
 	if o.transport == nil {
 		o.transport = &grpc.Server{}
 	}
+
 }
 
 type Option func(*options)
@@ -258,6 +260,12 @@ func WithSubscriberInterceptor(w ...interface{}) Option {
 	}
 }
 
+func WithCors(opts cors.Options) Option {
+	return func(o *options) {
+		o.cors = opts
+	}
+}
+
 func WithGRPCWeb(b bool) Option {
 	return func(o *options) {
 		o.grpcWeb = b
@@ -329,9 +337,9 @@ type options struct {
 	grpcWeb       bool
 	grpcWebOpts   []grpcweb.Option
 	grpcWebPrefix string
-
 	gateway     RegisterGatewayFunc
 	gatewayOpts []runtime.ServeMuxOption
+	cors          cors.Options
 
 	error         error
 	gatewayPrefix string
@@ -419,6 +427,10 @@ func (o *options) ClientInterceptors() []grpc.UnaryClientInterceptor {
 
 func (o *options) StreamClientInterceptors() []grpc.StreamClientInterceptor {
 	return o.streamClientInterceptors
+}
+
+func (o *options) Cors() cors.Options {
+	return o.cors
 }
 
 func (o *options) GRPCWeb() bool {
