@@ -32,7 +32,6 @@ import (
 
 type Service interface {
 	Options() Options
-	Server() *grpc.Server
 	DB() *gorm.DB
 	Start() error
 	Stop() error
@@ -133,10 +132,6 @@ func (s *service) Options() Options {
 
 func (s *service) DB() *gorm.DB {
 	return s.opts.db
-}
-
-func (s *service) Server() *grpc.Server {
-	return s.server
 }
 
 func (s *service) Cmd() *cobra.Command {
