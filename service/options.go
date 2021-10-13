@@ -83,8 +83,8 @@ type Options interface {
 	ClientInterceptors() []grpc.UnaryClientInterceptor
 	StreamClientInterceptors() []grpc.StreamClientInterceptor
 
-
 	Cors() cors.Options
+	Mux() ServeMux
 	GRPCWeb() bool
 	GRPCWebPrefix() string
 	GRPCWebOpts() []grpcweb.Option
@@ -266,6 +266,18 @@ func WithCors(opts cors.Options) Option {
 	}
 }
 
+func WithMux(mux ServeMux) Option {
+	return func(o *options) {
+		o.mux = mux
+	}
+}
+
+func WithMiddlewares(m ...Middleware) Option {
+	return func(o *options) {
+		o.middlewares = m
+	}
+}
+
 func WithGRPCWeb(b bool) Option {
 	return func(o *options) {
 		o.grpcWeb = b
@@ -334,11 +346,13 @@ type options struct {
 	clientInterceptors       []grpc.UnaryClientInterceptor
 	streamClientInterceptors []grpc.StreamClientInterceptor
 
+	mux           ServeMux
+	middlewares   []Middleware
 	grpcWeb       bool
 	grpcWebOpts   []grpcweb.Option
 	grpcWebPrefix string
-	gateway     RegisterGatewayFunc
-	gatewayOpts []runtime.ServeMuxOption
+	gateway       RegisterGatewayFunc
+	gatewayOpts   []runtime.ServeMuxOption
 	cors          cors.Options
 
 	error         error
@@ -431,6 +445,10 @@ func (o *options) StreamClientInterceptors() []grpc.StreamClientInterceptor {
 
 func (o *options) Cors() cors.Options {
 	return o.cors
+}
+
+func (o *options) Mux() ServeMux {
+	return o.mux
 }
 
 func (o *options) GRPCWeb() bool {

@@ -9,10 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"go.linka.cloud/grpc/client"
+	"go.linka.cloud/grpc/logger"
 	"go.linka.cloud/grpc/registry/mdns"
 	"go.linka.cloud/grpc/service"
 )
@@ -37,6 +39,20 @@ func (g *GreeterHandler) SayHelloStream(req *HelloStreamRequest, s Greeter_SayHe
 		// time.Sleep(time.Second)
 	}
 	return nil
+}
+
+func httpLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		start := time.Now()
+		log := logger.From(request.Context()).WithFields(
+			"method", request.Method,
+			"host", request.Host,
+			"path", request.URL.Path,
+			"remoteAddress", request.RemoteAddr,
+		)
+		next.ServeHTTP(writer, request)
+		log.WithField("duration", time.Since(start)).Info()
+	})
 }
 
 func main() {
@@ -71,6 +87,7 @@ func main() {
 		service.WithGatewayPrefix("/rest"),
 		service.WithGRPCWeb(true),
 		service.WithGRPCWebPrefix("/grpc"),
+		service.WithMiddlewares(httpLogger),
 	)
 	if err != nil {
 		panic(err)
@@ -137,9 +154,8 @@ func main() {
 		}
 		logrus.Info(string(b))
 	}
-	do(scheme+address+"/rest/api/v1/greeter/hello",  "application/json")
+	do(scheme+address+"/rest/api/v1/greeter/hello", "application/json")
 	do(scheme+address+"/grpc/helloworld.Greeter/SayHello", "application/grpc-web+json")
 	cancel()
 	<-done
 }
-

@@ -21,9 +21,9 @@ func (s *service) gateway(opts ...runtime.ServeMuxOption) error {
 		return err
 	}
 	if s.opts.gatewayPrefix != "" {
-		s.mux.Handle(s.opts.gatewayPrefix+"/", http.StripPrefix(s.opts.gatewayPrefix, mux))
+		s.opts.mux.Handle(s.opts.gatewayPrefix+"/", http.StripPrefix(s.opts.gatewayPrefix, mux))
 	} else {
-		s.mux.Handle("/", mux)
+		s.opts.mux.Handle("/", mux)
 	}
 	return nil
 }

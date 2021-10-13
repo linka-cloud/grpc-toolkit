@@ -13,9 +13,11 @@ require (
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/improbable-eng/grpc-web v0.14.1
 	github.com/jinzhu/gorm v1.9.12
+	github.com/justinas/alice v1.2.0
 	github.com/lyft/protoc-gen-star v0.6.0 // indirect
 	github.com/miekg/dns v1.1.35
 	github.com/planetscale/vtprotobuf v0.2.0
+	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.0.0

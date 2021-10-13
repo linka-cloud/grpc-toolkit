@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,7 +16,7 @@ func New() Logger {
 
 type Logger interface {
 	WithField(key string, value interface{}) Logger
-	WithFields(kv ...string) Logger
+	WithFields(kv ...interface{}) Logger
 	WithError(err error) Logger
 
 	Debugf(format string, args ...interface{})
@@ -53,9 +55,9 @@ func (l *logger) WithField(key string, value interface{}) Logger {
 	return &logger{FieldLogger: l.FieldLogger.WithField(key, value)}
 }
 
-func (l *logger) WithFields(kv ...string) Logger {
+func (l *logger) WithFields(kv ...interface{}) Logger {
 	for i := 0; i < len(kv); i += 2 {
-		l.FieldLogger = l.FieldLogger.WithField(kv[i], kv[i+1])
+		l.FieldLogger = l.FieldLogger.WithField(fmt.Sprintf("%v", kv[i]), kv[i+1])
 	}
 	return l
 }

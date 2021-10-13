@@ -26,9 +26,9 @@ func (s *service) grpcWeb(opts ...grpcweb.Option) error {
 	h := grpcweb.WrapServer(s.server, append(defaultWebOptions, opts...)...)
 	for _, v := range grpcweb.ListGRPCResources(s.server) {
 		if s.opts.grpcWebPrefix != "" {
-			s.mux.Handle(s.opts.grpcWebPrefix+v, http.StripPrefix(s.opts.grpcWebPrefix, h))
+			s.opts.mux.Handle(s.opts.grpcWebPrefix+v, http.StripPrefix(s.opts.grpcWebPrefix, h))
 		} else {
-			s.mux.Handle(v, h)
+			s.opts.mux.Handle(v, h)
 		}
 	}
 	return nil

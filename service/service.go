@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jinzhu/gorm"
+	"github.com/justinas/alice"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
@@ -54,7 +55,6 @@ type service struct {
 	mu      sync.Mutex
 	running bool
 
-	mux    *http.ServeMux
 	// inproc Channel is used to serve grpc gateway
 	inproc *inprocgrpc.Channel
 
@@ -71,13 +71,15 @@ func newService(opts ...Option) (*service, error) {
 		opts:   parseFlags(NewOptions()),
 		cmd:    cmd,
 		id:     uuid.New().String(),
-		mux:    http.NewServeMux(),
 		inproc: &inprocgrpc.Channel{},
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, f := range opts {
 		f(s.opts)
+	}
+	if s.opts.mux == nil {
+		s.opts.mux = http.NewServeMux()
 	}
 	if s.opts.error != nil {
 		return nil, s.opts.error
@@ -194,7 +196,7 @@ func (s *service) run() error {
 		}
 	}
 	hServer := &http.Server{
-		Handler: cors.New(s.opts.cors).Handler(s.mux),
+		Handler: alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
 	}
 	if s.opts.Gateway() || s.opts.grpcWeb {
 		go func() {
