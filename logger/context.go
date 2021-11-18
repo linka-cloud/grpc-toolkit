@@ -15,7 +15,7 @@ var (
 type log struct{}
 
 func init() {
-	defaultLogger = &logger{FieldLogger: logrus.New()}
+	defaultLogger = &logger{fl: logrus.New()}
 }
 
 func SetDefault(logger Logger) {
