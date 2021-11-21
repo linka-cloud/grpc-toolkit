@@ -17,6 +17,7 @@ Features:
     - [ ] mdns
     - [ ] kubernetes
 - [ ] default interceptors implementation: 
+    - [ ] default
     - [ ] validation
     - [ ] health
     - [ ] context logger
@@ -24,8 +25,8 @@ Features:
     - [ ] rate-limiting
     - [ ] auth claim in context
     - [ ] recovery
-    - [ ] tracing (open-tracing)
-    - [ ] metrics (prometheus)
+    - [x] tracing (open-tracing)
+    - [x] metrics (prometheus)
     - [ ] retries
     - [ ] context DB / transaction
     - ...

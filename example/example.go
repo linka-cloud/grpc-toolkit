@@ -14,6 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"go.linka.cloud/grpc/client"
+	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
+	validation2 "go.linka.cloud/grpc/interceptors/validation"
 	"go.linka.cloud/grpc/logger"
 	"go.linka.cloud/grpc/registry/mdns"
 	"go.linka.cloud/grpc/service"
@@ -32,6 +34,7 @@ func (g *GreeterHandler) SayHello(ctx context.Context, req *HelloRequest) (*Hell
 }
 
 func (g *GreeterHandler) SayHelloStream(req *HelloStreamRequest, s Greeter_SayHelloStreamServer) error {
+
 	for i := int64(0); i < req.Count; i++ {
 		if err := s.Send(&HelloReply{Message: fmt.Sprintf("Hello %s (%d)!", req.Name, i+1)}); err != nil {
 			return err
@@ -64,6 +67,8 @@ func main() {
 	defer cancel()
 	var svc service.Service
 	var err error
+	metrics := metrics2.NewInterceptors()
+	validation := validation2.NewInterceptors(true)
 	address := "0.0.0.0:9991"
 	svc, err = service.New(
 		service.WithContext(ctx),
@@ -88,6 +93,7 @@ func main() {
 		service.WithGRPCWeb(true),
 		service.WithGRPCWebPrefix("/grpc"),
 		service.WithMiddlewares(httpLogger),
+		service.WithInterceptors(validation, metrics),
 	)
 	if err != nil {
 		panic(err)
@@ -115,6 +121,10 @@ func main() {
 		logrus.Fatal(err)
 	}
 	logrus.Infof("received message: %s", res.Message)
+	res, err = g.SayHello(context.Background(), &HelloRequest{})
+	if err == nil {
+		logrus.Fatal("expected validation error")
+	}
 	stream, err := g.SayHelloStream(context.Background(), &HelloStreamRequest{Name: "test", Count: 10})
 	if err != nil {
 		logrus.Fatal(err)

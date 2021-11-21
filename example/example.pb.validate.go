@@ -46,7 +46,16 @@ func (m *HelloRequest) Validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Name
+	if l := utf8.RuneCountInString(m.GetName()); l < 2 || l > 40 {
+		err := HelloRequestValidationError{
+			field:  "Name",
+			reason: "value length must be between 2 and 40 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return HelloRequestMultiError(errors)
@@ -229,7 +238,16 @@ func (m *HelloStreamRequest) Validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Name
+	if l := utf8.RuneCountInString(m.GetName()); l < 2 || l > 40 {
+		err := HelloStreamRequestValidationError{
+			field:  "Name",
+			reason: "value length must be between 2 and 40 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Count
 

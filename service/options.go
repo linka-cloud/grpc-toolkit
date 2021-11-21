@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc/certs"
+	"go.linka.cloud/grpc/interceptors"
 	"go.linka.cloud/grpc/registry"
 	"go.linka.cloud/grpc/transport"
 	"go.linka.cloud/grpc/utils/addr"
@@ -228,16 +229,45 @@ func WithAfterStop(fn ...func() error) Option {
 	}
 }
 
+func WithInterceptors(i ...interceptors.Interceptors) Option {
+	return func(o *options) {
+		for _, v := range i {
+			o.unaryServerInterceptors = append(o.unaryServerInterceptors, v.UnaryServerInterceptor())
+			o.streamServerInterceptors = append(o.streamServerInterceptors, v.StreamServerInterceptor())
+			o.unaryClientInterceptors = append(o.unaryClientInterceptors, v.UnaryClientInterceptor())
+			o.streamClientInterceptors = append(o.streamClientInterceptors, v.StreamClientInterceptor())
+		}
+	}
+}
+
+func WithServerInterceptors(i ...interceptors.ServerInterceptors) Option {
+	return func(o *options) {
+		for _, v := range i {
+			o.unaryServerInterceptors = append(o.unaryServerInterceptors, v.UnaryServerInterceptor())
+			o.streamServerInterceptors = append(o.streamServerInterceptors, v.StreamServerInterceptor())
+		}
+	}
+}
+
+func WithClientInterceptors(i ...interceptors.ClientInterceptors) Option {
+	return func(o *options) {
+		for _, v := range i {
+			o.unaryClientInterceptors = append(o.unaryClientInterceptors, v.UnaryClientInterceptor())
+			o.streamClientInterceptors = append(o.streamClientInterceptors, v.StreamClientInterceptor())
+		}
+	}
+}
+
 func WithUnaryClientInterceptor(i ...grpc.UnaryClientInterceptor) Option {
 	return func(o *options) {
-		o.clientInterceptors = append(o.clientInterceptors, i...)
+		o.unaryClientInterceptors = append(o.unaryClientInterceptors, i...)
 	}
 }
 
 // WithUnaryServerInterceptor adds unary Wrapper interceptors to the options passed into the server
 func WithUnaryServerInterceptor(i ...grpc.UnaryServerInterceptor) Option {
 	return func(o *options) {
-		o.serverInterceptors = append(o.serverInterceptors, i...)
+		o.unaryServerInterceptors = append(o.unaryServerInterceptors, i...)
 	}
 }
 
@@ -340,10 +370,11 @@ type options struct {
 
 	serverOpts []grpc.ServerOption
 
-	serverInterceptors       []grpc.UnaryServerInterceptor
+
+	unaryServerInterceptors  []grpc.UnaryServerInterceptor
 	streamServerInterceptors []grpc.StreamServerInterceptor
 
-	clientInterceptors       []grpc.UnaryClientInterceptor
+	unaryClientInterceptors  []grpc.UnaryClientInterceptor
 	streamClientInterceptors []grpc.StreamClientInterceptor
 
 	mux           ServeMux
@@ -428,7 +459,7 @@ func (o *options) ServerOpts() []grpc.ServerOption {
 }
 
 func (o *options) ServerInterceptors() []grpc.UnaryServerInterceptor {
-	return o.serverInterceptors
+	return o.unaryServerInterceptors
 }
 
 func (o *options) StreamServerInterceptors() []grpc.StreamServerInterceptor {
@@ -436,7 +467,7 @@ func (o *options) StreamServerInterceptors() []grpc.StreamServerInterceptor {
 }
 
 func (o *options) ClientInterceptors() []grpc.UnaryClientInterceptor {
-	return o.clientInterceptors
+	return o.unaryClientInterceptors
 }
 
 func (o *options) StreamClientInterceptors() []grpc.StreamClientInterceptor {

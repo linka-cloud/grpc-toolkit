@@ -107,10 +107,10 @@ func newService(opts ...Option) (*service, error) {
 		}
 		return s.run()
 	}
-	ui := grpcmiddleware.ChainUnaryServer(s.opts.serverInterceptors...)
+	ui := grpcmiddleware.ChainUnaryServer(s.opts.unaryServerInterceptors...)
 	s.inproc = s.inproc.WithServerUnaryInterceptor(ui)
 
-	si := grpcmiddleware.ChainStreamServer(/*TODO(adphi): add to options*/)
+	si := grpcmiddleware.ChainStreamServer( /*TODO(adphi): add to options*/ )
 	s.inproc = s.inproc.WithServerStreamInterceptor(si)
 
 	gopts := []grpc.ServerOption{
@@ -181,8 +181,8 @@ func (s *service) run() error {
 
 	if reflect.DeepEqual(s.opts.cors, cors.Options{}) {
 		s.opts.cors = cors.Options{
-			AllowedHeaders:   []string{"*"},
-			AllowedMethods:   []string{
+			AllowedHeaders: []string{"*"},
+			AllowedMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
 				http.MethodPut,
@@ -235,7 +235,7 @@ func (s *service) run() error {
 		logrus.Warnf("received %v", sig)
 		return s.Close()
 	case err := <-errs:
-		if err != nil && !ignoreMuxError(err){
+		if err != nil && !ignoreMuxError(err) {
 			logrus.Error(err)
 			return err
 		}

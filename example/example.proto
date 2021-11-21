@@ -5,6 +5,7 @@ package helloworld;
 option go_package = "go.linka.cloud/grpc/example;main";
 
 import "google/api/annotations.proto";
+import "validate/validate.proto";
 
 service Greeter {
     rpc SayHello (HelloRequest) returns (HelloReply) {
@@ -17,7 +18,7 @@ service Greeter {
 }
 
 message HelloRequest {
-    string name = 1;
+    string name = 1 [(validate.rules).string = {min_len: 2, max_len: 40}];
 }
 
 message HelloReply {
@@ -25,6 +26,6 @@ message HelloReply {
 }
 
 message HelloStreamRequest {
-    string name = 1;
+    string name = 1 [(validate.rules).string = {min_len: 2, max_len: 40}];
     int64 count = 2;
 }
