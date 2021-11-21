@@ -22,7 +22,7 @@ Features:
     - [x] validation
     - [ ] health
     - [ ] context logger
-    - [ ] sentry
+    - [x] sentry
     - [ ] rate-limiting
     - [ ] ban
     - [ ] auth claim in context
@@ -46,4 +46,5 @@ Features:
 - https://github.com/grpc-ecosystem/go-grpc-prometheus
 - https://github.com/grpc-ecosystem/grpc-gateway
 - https://github.com/jaredfolkins/badactor
-- github.com/improbable-eng/grpc-web
+- https://github.com/johnbellone/grpc-middleware-sentry
+- https://github.com/improbable-eng/grpc-web

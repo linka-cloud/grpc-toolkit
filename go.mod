@@ -16,6 +16,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/improbable-eng/grpc-web v0.14.1
 	github.com/jinzhu/gorm v1.9.12
+	github.com/johnbellone/grpc-middleware-sentry v0.2.0
 	github.com/justinas/alice v1.2.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lyft/protoc-gen-star v0.6.0 // indirect
