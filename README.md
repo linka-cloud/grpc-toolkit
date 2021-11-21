@@ -9,28 +9,30 @@ Principles:
 
 Features:
 - [x] simple configuration with options
-- [x] embeded gorm database with options (branch db)
+- [x] embedded gorm database with options (branch db)
 - [x] simple TLS configuration
 - [ ] TLS auth
 - [ ] client connection pool
 - [ ] registry / resolver resolution
     - [ ] mdns
     - [ ] kubernetes
-- [ ] default interceptors implementation: 
-    - [ ] default
-    - [ ] validation
+- [ ] default interceptors implementation:
+    - [ ] context request id
+    - [x] defaulter
+    - [x] validation
     - [ ] health
     - [ ] context logger
     - [ ] sentry
     - [ ] rate-limiting
+    - [ ] ban
     - [ ] auth claim in context
-    - [ ] recovery
+    - [x] recovery (server side only)
     - [x] tracing (open-tracing)
     - [x] metrics (prometheus)
     - [ ] retries
     - [ ] context DB / transaction
     - ...
-- [ ] api gateway with middleware:
+- [ ] grpc web / api gateway with middleware:
     - [ ] auth
     - [ ] cors
     - [ ] logging
@@ -43,3 +45,5 @@ Features:
 - https://github.com/grpc-ecosystem/grpc-opentracing
 - https://github.com/grpc-ecosystem/go-grpc-prometheus
 - https://github.com/grpc-ecosystem/grpc-gateway
+- https://github.com/jaredfolkins/badactor
+- github.com/improbable-eng/grpc-web

@@ -110,7 +110,7 @@ func newService(opts ...Option) (*service, error) {
 	ui := grpcmiddleware.ChainUnaryServer(s.opts.unaryServerInterceptors...)
 	s.inproc = s.inproc.WithServerUnaryInterceptor(ui)
 
-	si := grpcmiddleware.ChainStreamServer( /*TODO(adphi): add to options*/ )
+	si := grpcmiddleware.ChainStreamServer(s.opts.streamServerInterceptors... )
 	s.inproc = s.inproc.WithServerStreamInterceptor(si)
 
 	gopts := []grpc.ServerOption{

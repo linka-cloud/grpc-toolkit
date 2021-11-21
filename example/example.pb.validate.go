@@ -249,7 +249,16 @@ func (m *HelloStreamRequest) Validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	// no validation rules for Count
+	if val := m.GetCount(); val < 1 || val > 10 {
+		err := HelloStreamRequestValidationError{
+			field:  "Count",
+			reason: "value must be inside range [1, 10]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return HelloStreamRequestMultiError(errors)

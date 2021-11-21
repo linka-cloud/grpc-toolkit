@@ -370,7 +370,6 @@ type options struct {
 
 	serverOpts []grpc.ServerOption
 
-
 	unaryServerInterceptors  []grpc.UnaryServerInterceptor
 	streamServerInterceptors []grpc.StreamServerInterceptor
 

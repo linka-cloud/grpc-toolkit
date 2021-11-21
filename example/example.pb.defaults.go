@@ -21,4 +21,7 @@ func (x *HelloReply) Default() {
 }
 
 func (x *HelloStreamRequest) Default() {
+	if x.Count == 0 {
+		x.Count = 10
+	}
 }

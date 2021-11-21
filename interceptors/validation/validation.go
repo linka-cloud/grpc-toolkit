@@ -133,11 +133,9 @@ func (s *recvWrapper) RecvMsg(m interface{}) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
-
 	if err := s.i.validate(m); err != nil {
 		return err
 	}
-
 	return nil
 }
 

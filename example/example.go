@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"go.linka.cloud/grpc/client"
+	"go.linka.cloud/grpc/interceptors/defaulter"
 	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
 	validation2 "go.linka.cloud/grpc/interceptors/validation"
 	"go.linka.cloud/grpc/logger"
@@ -69,6 +70,7 @@ func main() {
 	var err error
 	metrics := metrics2.NewInterceptors()
 	validation := validation2.NewInterceptors(true)
+	defaulter := defaulter.NewInterceptors()
 	address := "0.0.0.0:9991"
 	svc, err = service.New(
 		service.WithContext(ctx),
@@ -93,7 +95,7 @@ func main() {
 		service.WithGRPCWeb(true),
 		service.WithGRPCWebPrefix("/grpc"),
 		service.WithMiddlewares(httpLogger),
-		service.WithInterceptors(validation, metrics),
+		service.WithInterceptors(metrics, defaulter, validation),
 	)
 	if err != nil {
 		panic(err)
@@ -125,7 +127,7 @@ func main() {
 	if err == nil {
 		logrus.Fatal("expected validation error")
 	}
-	stream, err := g.SayHelloStream(context.Background(), &HelloStreamRequest{Name: "test", Count: 10})
+	stream, err := g.SayHelloStream(context.Background(), &HelloStreamRequest{Name: "test"})
 	if err != nil {
 		logrus.Fatal(err)
 	}
