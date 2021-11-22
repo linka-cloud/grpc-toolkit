@@ -48,5 +48,5 @@ func (n noop) Watch(option ...registry.WatchOption) (registry.Watcher, error) {
 }
 
 func (n noop) String() string {
-	return "passthroug"
+	return "noop"
 }

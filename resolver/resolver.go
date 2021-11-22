@@ -34,7 +34,8 @@ type resolvr struct {
 }
 
 func (r *resolvr) run() {
-	if r.reg.String() == "passthroug" {
+	if r.reg.String() == "noop" {
+		r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint}}})
 		return
 	}
 	var name, version string
