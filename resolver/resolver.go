@@ -34,7 +34,7 @@ type resolvr struct {
 }
 
 func (r *resolvr) run() {
-	if r.reg.String() == "noop" {
+	if r.reg.String() == "passthroug" {
 		return
 	}
 	var name, version string
@@ -68,9 +68,9 @@ func (r *resolvr) run() {
 		}
 		// TODO(adphi): implement
 		switch res.Action {
-		case "create":
+		case registry.Create.String():
 
-		case "delete":
+		case registry.Delete.String():
 
 		}
 		r.cc.UpdateState(resolver.State{Addresses: r.addrs})

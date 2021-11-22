@@ -36,6 +36,12 @@ func WithVersion(version string) Option {
 	}
 }
 
+func WithAddress(address string) Option {
+	return func(o *options) {
+		o.addr = address
+	}
+}
+
 func WithTLSConfig(conf *tls.Config) Option {
 	return func(o *options) {
 		o.tlsConfig = conf
@@ -58,6 +64,7 @@ type options struct {
 	registry    registry.Registry
 	name        string
 	version     string
+	addr        string
 	tlsConfig   *tls.Config
 	secure      bool
 	dialOptions []grpc.DialOption

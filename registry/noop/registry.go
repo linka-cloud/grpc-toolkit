@@ -1,6 +1,8 @@
 package noop
 
 import (
+	"errors"
+
 	"google.golang.org/grpc/resolver"
 
 	"go.linka.cloud/grpc/registry"
@@ -42,17 +44,9 @@ func (n noop) ListServices(option ...registry.ListOption) ([]*registry.Service, 
 }
 
 func (n noop) Watch(option ...registry.WatchOption) (registry.Watcher, error) {
-	return noopWatcher{}, nil
+	return nil, errors.New("watch not supported")
 }
 
 func (n noop) String() string {
 	return "passthroug"
 }
-
-type noopWatcher struct{}
-
-func (n noopWatcher) Next() (*registry.Result, error) {
-	return &registry.Result{}, nil
-}
-
-func (n noopWatcher) Stop() {}

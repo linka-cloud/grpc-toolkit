@@ -36,8 +36,14 @@ func New(opts ...Option) (Client, error) {
 	if !c.opts.secure {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithInsecure())
 	}
-	c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)
-	if c.opts.version != "" {
+	if c.opts.addr == "" {
+		c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)
+	} else if strings.HasPrefix(c.opts.addr, "tcp://"){
+		c.addr = strings.Replace(c.opts.addr, "tcp://", "", 1)
+	} else {
+		c.addr = c.opts.addr
+	}
+	if c.opts.version != "" && c.opts.addr == "" {
 		c.addr = c.addr + ":" + strings.TrimSpace(c.opts.version)
 	}
 	return c, nil

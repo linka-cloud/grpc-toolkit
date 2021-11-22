@@ -18,7 +18,6 @@ import (
 	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
 	validation2 "go.linka.cloud/grpc/interceptors/validation"
 	"go.linka.cloud/grpc/logger"
-	"go.linka.cloud/grpc/registry/mdns"
 	"go.linka.cloud/grpc/service"
 )
 
@@ -61,6 +60,7 @@ func httpLogger(next http.Handler) http.Handler {
 
 func main() {
 	name := "greeter"
+	version := "v0.0.1"
 	secure := true
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -75,9 +75,9 @@ func main() {
 	svc, err = service.New(
 		service.WithContext(ctx),
 		service.WithName(name),
-		service.WithVersion("v0.0.1"),
+		service.WithVersion(version),
 		service.WithAddress(address),
-		service.WithRegistry(mdns.NewRegistry()),
+		// service.WithRegistry(mdns.NewRegistry()),
 		service.WithReflection(true),
 		service.WithSecure(secure),
 		service.WithAfterStart(func() error {
@@ -108,9 +108,10 @@ func main() {
 	}()
 	<-ready
 	s, err := client.New(
-		client.WithName("greeter"),
-		client.WithVersion("v0.0.1"),
-		client.WithRegistry(mdns.NewRegistry()),
+		// client.WithName(name),
+		// client.WithVersion(version),
+		client.WithAddress("localhost:9991"),
+		// client.WithRegistry(mdns.NewRegistry()),
 		client.WithSecure(secure),
 	)
 	if err != nil {
