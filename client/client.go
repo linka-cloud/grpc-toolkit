@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/resolver"
@@ -35,6 +36,12 @@ func New(opts ...Option) (Client, error) {
 	}
 	if !c.opts.secure {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithInsecure())
+	}
+	if len(c.opts.unaryInterceptors) > 0 {
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(c.opts.unaryInterceptors...)))
+	}
+	if len(c.opts.streamInterceptors) > 0 {
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(c.opts.streamInterceptors...)))
 	}
 	if c.opts.addr == "" {
 		c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)

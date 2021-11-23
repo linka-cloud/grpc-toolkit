@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"go.linka.cloud/grpc/interceptors"
 	"go.linka.cloud/grpc/registry"
 )
 
@@ -60,6 +61,27 @@ func WithDialOptions(opts ...grpc.DialOption) Option {
 	}
 }
 
+func WithInterceptors(i ...interceptors.ClientInterceptors) Option {
+	return func(o *options) {
+		for _, v := range i {
+			o.unaryInterceptors = append(o.unaryInterceptors, v.UnaryClientInterceptor())
+			o.streamInterceptors = append(o.streamInterceptors, v.StreamClientInterceptor())
+		}
+	}
+}
+
+func WithUnaryInterceptors(i ...grpc.UnaryClientInterceptor) Option {
+	return func(o *options) {
+		o.unaryInterceptors = append(o.unaryInterceptors, i...)
+	}
+}
+
+func WithStreamInterceptors(i ...grpc.StreamClientInterceptor) Option {
+	return func(o *options) {
+		o.streamInterceptors = append(o.streamInterceptors, i...)
+	}
+}
+
 type options struct {
 	registry    registry.Registry
 	name        string
@@ -68,6 +90,9 @@ type options struct {
 	tlsConfig   *tls.Config
 	secure      bool
 	dialOptions []grpc.DialOption
+
+	unaryInterceptors []grpc.UnaryClientInterceptor
+	streamInterceptors []grpc.StreamClientInterceptor
 }
 
 func (o *options) Name() string {

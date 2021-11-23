@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc/client"
 	"go.linka.cloud/grpc/interceptors/defaulter"
@@ -113,6 +114,10 @@ func main() {
 		client.WithAddress("localhost:9991"),
 		// client.WithRegistry(mdns.NewRegistry()),
 		client.WithSecure(secure),
+		client.WithUnaryInterceptors(func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			logger.From(ctx).WithFields("party", "client", "method", method).Info(req)
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}),
 	)
 	if err != nil {
 		logrus.Fatal(err)
