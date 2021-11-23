@@ -11,6 +11,11 @@ import (
 	"go.linka.cloud/grpc/interceptors"
 )
 
+type validatorAll interface {
+	Validate() error
+	ValidateAll() error
+}
+
 // The validate interface starting with protoc-gen-validate v0.6.0.
 // See https://github.com/envoyproxy/protoc-gen-validate/pull/455.
 type validator interface {
@@ -42,6 +47,9 @@ func validatorErrorToGrpc(e validatorError) *errdetails.BadRequest_FieldViolatio
 }
 
 func errToStatus(err error) error {
+	if err == nil {
+		return nil
+	}
 	switch v := err.(type) {
 	case validatorError:
 		return errors.InvalidArgumentD(err, validatorErrorToGrpc(v))
@@ -60,14 +68,15 @@ func errToStatus(err error) error {
 
 func (i interceptor) validate(req interface{}) error {
 	switch v := req.(type) {
+	case validatorAll:
+		if i.all {
+			return errToStatus(v.ValidateAll())
+		}
+		return errToStatus(v.Validate())
 	case validatorLegacy:
-		if err := v.Validate(); err != nil {
-			return errToStatus(err)
-		}
+		return errToStatus(v.Validate())
 	case validator:
-		if err := v.Validate(i.all); err != nil {
-			return errToStatus(err)
-		}
+		return errToStatus(v.Validate(i.all))
 	}
 	return nil
 }
