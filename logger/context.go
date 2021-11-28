@@ -18,6 +18,8 @@ func init() {
 	defaultLogger = &logger{fl: logrus.New()}
 }
 
+var C = From
+
 func SetDefault(logger Logger) {
 	mu.Lock()
 	defer mu.Unlock()
