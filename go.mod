@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/alta/protopatch v0.3.4
 	github.com/envoyproxy/protoc-gen-validate v0.6.0
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/fullstorydev/grpchan v1.0.2-0.20201120232431-d0ab778aeebd
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
@@ -30,6 +30,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.7.0
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
 	go.linka.cloud/protoc-gen-defaults v0.1.0
 	go.linka.cloud/protoc-gen-go-fields v0.1.1
 	go.linka.cloud/protofilters v0.2.2

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 )
 
 var defaultGatewayOptions = []runtime.ServeMuxOption{
@@ -21,9 +22,9 @@ func (s *service) gateway(opts ...runtime.ServeMuxOption) error {
 		return err
 	}
 	if s.opts.gatewayPrefix != "" {
-		s.opts.mux.Handle(s.opts.gatewayPrefix+"/", http.StripPrefix(s.opts.gatewayPrefix, mux))
+		s.opts.mux.Handle(s.opts.gatewayPrefix+"/", http.StripPrefix(s.opts.gatewayPrefix, wsproxy.WebsocketProxy(mux)))
 	} else {
-		s.opts.mux.Handle("/", mux)
+		s.opts.mux.Handle("/", wsproxy.WebsocketProxy(mux))
 	}
 	return nil
 }
