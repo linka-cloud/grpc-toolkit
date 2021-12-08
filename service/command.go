@@ -6,8 +6,9 @@ import (
 )
 
 var cmd = &cobra.Command{
-	Short:        "A gRPC micro service",
-	SilenceUsage: true,
+	Short:              "A gRPC micro service",
+	SilenceUsage:       true,
+	FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 }
 
 const (
