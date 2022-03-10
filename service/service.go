@@ -22,9 +22,10 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
-	"github.com/spf13/cobra"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	greflect "google.golang.org/grpc/reflection"
 
 	"go.linka.cloud/grpc/registry"
@@ -37,7 +38,6 @@ type Service interface {
 	Start() error
 	Stop() error
 	Close() error
-	Cmd() *cobra.Command
 
 	RegisterService(desc *grpc.ServiceDesc, impl interface{})
 }
@@ -47,7 +47,6 @@ func New(opts ...Option) (Service, error) {
 }
 
 type service struct {
-	cmd    *cobra.Command
 	opts   *options
 	cancel context.CancelFunc
 
@@ -64,12 +63,8 @@ type service struct {
 }
 
 func newService(opts ...Option) (*service, error) {
-	if err := cmd.ParseFlags(os.Args); err != nil {
-		return nil, err
-	}
 	s := &service{
-		opts:   parseFlags(NewOptions()),
-		cmd:    cmd,
+		opts:   NewOptions(),
 		id:     uuid.New().String(),
 		inproc: &inprocgrpc.Channel{},
 	}
@@ -77,6 +72,34 @@ func newService(opts ...Option) (*service, error) {
 	defer s.mu.Unlock()
 	for _, f := range opts {
 		f(s.opts)
+	}
+	if s.opts.name != "" {
+		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{mdInterceptors{
+			k: "grpc-service-name", v: s.opts.name,
+		}.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
+		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{mdInterceptors{
+			k: "grpc-service-name", v: s.opts.name,
+		}.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
+		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{mdInterceptors{
+			k: "grpc-service-name", v: s.opts.name,
+		}.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
+		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{mdInterceptors{
+			k: "grpc-service-name", v: s.opts.name,
+		}.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
+	}
+	if s.opts.version != "" {
+		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{mdInterceptors{
+			k: "grpc-service-version", v: s.opts.version,
+		}.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
+		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{mdInterceptors{
+			k: "grpc-service-version", v: s.opts.version,
+		}.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
+		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{mdInterceptors{
+			k: "grpc-service-version", v: s.opts.version,
+		}.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
+		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{mdInterceptors{
+			k: "grpc-service-version", v: s.opts.version,
+		}.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
 	}
 	if s.opts.mux == nil {
 		s.opts.mux = http.NewServeMux()
@@ -100,17 +123,11 @@ func newService(opts ...Option) (*service, error) {
 	if err := s.opts.parseTLSConfig(); err != nil {
 		return nil, err
 	}
-	cmd.Use = s.opts.name
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		if cmd.Use == "" {
-			cmd.Use = os.Args[0]
-		}
-		return s.run()
-	}
+
 	ui := grpcmiddleware.ChainUnaryServer(s.opts.unaryServerInterceptors...)
 	s.inproc = s.inproc.WithServerUnaryInterceptor(ui)
 
-	si := grpcmiddleware.ChainStreamServer(s.opts.streamServerInterceptors... )
+	si := grpcmiddleware.ChainStreamServer(s.opts.streamServerInterceptors...)
 	s.inproc = s.inproc.WithServerStreamInterceptor(si)
 
 	gopts := []grpc.ServerOption{
@@ -120,6 +137,9 @@ func newService(opts ...Option) (*service, error) {
 	s.server = grpc.NewServer(append(gopts, s.opts.serverOpts...)...)
 	if s.opts.reflection {
 		greflect.Register(s.server)
+	}
+	if s.opts.health {
+		grpc_health_v1.RegisterHealthServer(s, health.NewServer())
 	}
 	if err := s.gateway(s.opts.gatewayOpts...); err != nil {
 		return nil, err
@@ -134,10 +154,6 @@ func (s *service) Options() Options {
 
 func (s *service) DB() *gorm.DB {
 	return s.opts.db
-}
-
-func (s *service) Cmd() *cobra.Command {
-	return s.cmd
 }
 
 func (s *service) run() error {
@@ -244,7 +260,7 @@ func (s *service) run() error {
 }
 
 func (s *service) Start() error {
-	return s.cmd.Execute()
+	return s.run()
 }
 
 func (s *service) Stop() error {

@@ -61,6 +61,7 @@ type Options interface {
 	Address() string
 
 	Reflection() bool
+	Health() bool
 
 	CACert() string
 	Cert() string
@@ -103,6 +104,7 @@ func NewOptions() *options {
 	return &options{
 		ctx:     context.Background(),
 		address: ":0",
+		health:  true,
 	}
 }
 
@@ -158,6 +160,12 @@ func WithAddress(addr string) Option {
 func WithReflection(r bool) Option {
 	return func(o *options) {
 		o.reflection = r
+	}
+}
+
+func WithHealth(h bool) Option {
+	return func(o *options) {
+		o.health = h
 	}
 }
 
@@ -351,6 +359,7 @@ type options struct {
 	address string
 
 	reflection bool
+	health     bool
 
 	secure    bool
 	caCert    string
@@ -411,6 +420,10 @@ func (o *options) Registry() registry.Registry {
 
 func (o *options) Reflection() bool {
 	return o.reflection
+}
+
+func (o *options) Health() bool {
+	return o.health
 }
 
 func (o *options) CACert() string {

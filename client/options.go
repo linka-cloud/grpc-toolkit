@@ -12,9 +12,13 @@ import (
 type Options interface {
 	Name() string
 	Version() string
+	Address() string
+	Secure() bool
 	Registry() registry.Registry
 	TLSConfig() *tls.Config
 	DialOptions() []grpc.DialOption
+	UnaryInterceptors() []grpc.UnaryClientInterceptor
+	StreamInterceptors() []grpc.StreamClientInterceptor
 }
 
 type Option func(*options)
@@ -91,7 +95,7 @@ type options struct {
 	secure      bool
 	dialOptions []grpc.DialOption
 
-	unaryInterceptors []grpc.UnaryClientInterceptor
+	unaryInterceptors  []grpc.UnaryClientInterceptor
 	streamInterceptors []grpc.StreamClientInterceptor
 }
 
@@ -101,6 +105,10 @@ func (o *options) Name() string {
 
 func (o *options) Version() string {
 	return o.version
+}
+
+func (o *options) Address() string {
+	return o.addr
 }
 
 func (o *options) Registry() registry.Registry {
@@ -117,4 +125,12 @@ func (o *options) Secure() bool {
 
 func (o *options) DialOptions() []grpc.DialOption {
 	return o.dialOptions
+}
+
+func (o *options) UnaryInterceptors() []grpc.UnaryClientInterceptor {
+	return o.unaryInterceptors
+}
+
+func (o *options) StreamInterceptors() []grpc.StreamClientInterceptor {
+	return o.streamInterceptors
 }

@@ -11,8 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	greflectsvc "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.linka.cloud/grpc/client"
 	"go.linka.cloud/grpc/interceptors/defaulter"
@@ -35,7 +39,6 @@ func (g *GreeterHandler) SayHello(ctx context.Context, req *HelloRequest) (*Hell
 }
 
 func (g *GreeterHandler) SayHelloStream(req *HelloStreamRequest, s Greeter_SayHelloStreamServer) error {
-
 	for i := int64(0); i < req.Count; i++ {
 		if err := s.Send(&HelloReply{Message: fmt.Sprintf("Hello %s (%d)!", req.Name, i+1)}); err != nil {
 			return err
@@ -60,21 +63,34 @@ func httpLogger(next http.Handler) http.Handler {
 }
 
 func main() {
+	f, opts := service.NewFlagSet()
+	cmd := &cobra.Command{
+		Use: "example",
+		Run: func(cmd *cobra.Command, args []string) {
+			run(opts)
+		},
+	}
+	cmd.Flags().AddFlagSet(f)
+	cmd.Execute()
+}
+
+func run(opts ...service.Option) {
 	name := "greeter"
 	version := "v0.0.1"
 	secure := true
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	log := logger.New().WithFields("service", name)
+	ctx = logger.Set(ctx, log)
 	done := make(chan struct{})
 	ready := make(chan struct{})
-	defer cancel()
 	var svc service.Service
 	var err error
 	metrics := metrics2.NewInterceptors()
 	validation := validation2.NewInterceptors(true)
 	defaulter := defaulter.NewInterceptors()
 	address := "0.0.0.0:9991"
-	svc, err = service.New(
-		service.WithContext(ctx),
+	opts = append(opts, service.WithContext(ctx),
 		service.WithName(name),
 		service.WithVersion(version),
 		service.WithAddress(address),
@@ -82,12 +98,12 @@ func main() {
 		service.WithReflection(true),
 		service.WithSecure(secure),
 		service.WithAfterStart(func() error {
-			fmt.Println("Server listening on", svc.Options().Address())
+			log.Info("Server listening on", svc.Options().Address())
 			close(ready)
 			return nil
 		}),
 		service.WithAfterStop(func() error {
-			fmt.Println("Stopping server")
+			log.Info("Stopping server")
 			close(done)
 			return nil
 		}),
@@ -98,6 +114,7 @@ func main() {
 		service.WithMiddlewares(httpLogger),
 		service.WithInterceptors(metrics, defaulter, validation),
 	)
+	svc, err = service.New(opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -120,22 +137,29 @@ func main() {
 		}),
 	)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	g := NewGreeterClient(s)
 	defer cancel()
-	res, err := g.SayHello(context.Background(), &HelloRequest{Name: "test"})
+	md := metadata.MD{}
+	res, err := g.SayHello(ctx, &HelloRequest{Name: "test"}, grpc.Header(&md))
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
-	logrus.Infof("received message: %s", res.Message)
-	res, err = g.SayHello(context.Background(), &HelloRequest{})
+	logMetadata(ctx, md)
+	log.Infof("received message: %s", res.Message)
+	md = metadata.MD{}
+	res, err = g.SayHello(ctx, &HelloRequest{}, grpc.Header(&md))
 	if err == nil {
-		logrus.Fatal("expected validation error")
+		log.Fatal("expected validation error")
 	}
-	stream, err := g.SayHelloStream(context.Background(), &HelloStreamRequest{Name: "test"})
+	logMetadata(ctx, md)
+	stream, err := g.SayHelloStream(ctx, &HelloStreamRequest{Name: "test"}, grpc.Header(&md))
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
+	}
+	if md, err := stream.Header(); err == nil {
+		logMetadata(ctx, md)
 	}
 	for {
 		m, err := stream.Recv()
@@ -143,9 +167,9 @@ func main() {
 			break
 		}
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
-		logrus.Infof("received stream message: %s", m.Message)
+		log.Infof("received stream message: %s", m.Message)
 	}
 	scheme := "http://"
 	if secure {
@@ -163,17 +187,105 @@ func main() {
 	do := func(url, contentType string) {
 		resp, err := httpc.Post(url, contentType, strings.NewReader(req))
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 		defer resp.Body.Close()
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
-		logrus.Info(string(b))
+		log.Info(string(b))
 	}
 	do(scheme+address+"/rest/api/v1/greeter/hello", "application/json")
 	do(scheme+address+"/grpc/helloworld.Greeter/SayHello", "application/grpc-web+json")
+
+	if err := readSvcs(ctx, s); err != nil {
+		log.Fatal(err)
+	}
 	cancel()
 	<-done
+}
+
+func logMetadata(ctx context.Context, md metadata.MD) {
+	log := logger.From(ctx)
+	for k, v := range md {
+		log.Infof("%s: %v", k, v)
+	}
+}
+
+func readSvcs(ctx context.Context, c client.Client) (err error) {
+	log := logger.From(ctx)
+	rc := greflectsvc.NewServerReflectionClient(c)
+	rstream, err := rc.ServerReflectionInfo(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err2 := rstream.CloseSend(); err2 != nil && err == nil {
+			err = err2
+		}
+	}()
+	if err = rstream.Send(&greflectsvc.ServerReflectionRequest{MessageRequest: &greflectsvc.ServerReflectionRequest_ListServices{}}); err != nil {
+		return err
+	}
+	var rres *greflectsvc.ServerReflectionResponse
+	rres, err = rstream.Recv()
+	if err != nil {
+		return err
+	}
+	rlist, ok := rres.MessageResponse.(*greflectsvc.ServerReflectionResponse_ListServicesResponse)
+	if !ok {
+		return fmt.Errorf("unexpected reflection response type: %T", rres.MessageResponse)
+	}
+	for _, v := range rlist.ListServicesResponse.Service {
+		if v.Name == "grpc.reflection.v1alpha.ServerReflection" {
+			continue
+		}
+		parts := strings.Split(v.Name, ".")
+		if len(parts) < 2 {
+			return fmt.Errorf("malformed service name: %s", v.Name)
+		}
+		pkg := strings.Join(parts[:len(parts)-1], ".")
+		svc := parts[len(parts)-1]
+		if err = rstream.Send(&greflectsvc.ServerReflectionRequest{MessageRequest: &greflectsvc.ServerReflectionRequest_FileContainingSymbol{
+			FileContainingSymbol: v.Name,
+		}}); err != nil {
+			return err
+		}
+		rres, err = rstream.Recv()
+		if err != nil {
+			log.Fatal(err)
+		}
+		rfile, ok := rres.MessageResponse.(*greflectsvc.ServerReflectionResponse_FileDescriptorResponse)
+		if !ok {
+			return fmt.Errorf("unexpected reflection response type: %T", rres.MessageResponse)
+		}
+		fdps := make(map[string]*descriptorpb.DescriptorProto)
+		var sdp *descriptorpb.ServiceDescriptorProto
+		for _, v := range rfile.FileDescriptorResponse.FileDescriptorProto {
+			fdp := &descriptorpb.FileDescriptorProto{}
+			if err = proto.Unmarshal(v, fdp); err != nil {
+				return err
+			}
+			for _, s := range fdp.GetService() {
+				if fdp.GetPackage() == pkg && s.GetName() == svc {
+					if sdp != nil {
+						log.Warnf("service already found: %s.%s", fdp.GetPackage(), s.GetName())
+						continue
+					}
+					sdp = s
+				}
+			}
+			for _, m := range fdp.GetMessageType() {
+				fdps[fdp.GetPackage()+"."+m.GetName()] = m
+			}
+		}
+		if sdp == nil {
+			return fmt.Errorf("%s: service not found", v.Name)
+		}
+		for _, m := range sdp.GetMethod() {
+			log.Infof("%s: %s", v.Name, m.GetName())
+		}
+	}
+	return nil
 }
