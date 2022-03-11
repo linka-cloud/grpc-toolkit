@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -119,8 +120,15 @@ func run(opts ...service.Option) {
 		panic(err)
 	}
 	RegisterGreeterServer(svc, &GreeterHandler{})
+	metrics2.Register(svc)
 	go func() {
 		if err := svc.Start(); err != nil {
+			panic(err)
+		}
+	}()
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		if err := http.ListenAndServe(":9992", nil); err != nil {
 			panic(err)
 		}
 	}()

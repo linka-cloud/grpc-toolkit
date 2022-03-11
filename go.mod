@@ -7,7 +7,7 @@ require (
 	github.com/caitlinelfring/go-env-default v1.1.0
 	github.com/envoyproxy/protoc-gen-validate v0.6.2
 	github.com/fsnotify/fsnotify v1.5.1
-	github.com/fullstorydev/grpchan v1.0.2-0.20201120232431-d0ab778aeebd
+	github.com/fullstorydev/grpchan v1.1.1
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -25,6 +25,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/planetscale/vtprotobuf v0.2.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/soheilhy/cmux v0.1.5
@@ -38,10 +39,13 @@ require (
 	go.uber.org/multierr v1.7.0
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa
-	google.golang.org/grpc v1.42.0
+	google.golang.org/grpc v1.45.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
 
-replace github.com/grpc-ecosystem/grpc-gateway/v2 => github.com/linka-cloud/grpc-gateway/v2 v2.5.1-0.20210917084803-33b6d54c9e11
+replace (
+	github.com/grpc-ecosystem/go-grpc-prometheus => github.com/linka-cloud/go-grpc-prometheus v1.2.0-lk
+	github.com/grpc-ecosystem/grpc-gateway/v2 => github.com/linka-cloud/grpc-gateway/v2 v2.5.1-0.20210917084803-33b6d54c9e11
+)

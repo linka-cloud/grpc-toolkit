@@ -7,6 +7,10 @@ import (
 	"go.linka.cloud/grpc/interceptors"
 )
 
+var (
+	Register = grpc_prometheus.Register
+)
+
 type metrics struct {
 	s *grpc_prometheus.ServerMetrics
 	c *grpc_prometheus.ClientMetrics
