@@ -45,7 +45,7 @@ func New(opts ...Option) (Client, error) {
 	}
 	if c.opts.addr == "" {
 		c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)
-	} else if strings.HasPrefix(c.opts.addr, "tcp://"){
+	} else if strings.HasPrefix(c.opts.addr, "tcp://") {
 		c.addr = strings.Replace(c.opts.addr, "tcp://", "", 1)
 	} else {
 		c.addr = c.opts.addr

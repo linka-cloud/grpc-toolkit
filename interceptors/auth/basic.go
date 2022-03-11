@@ -8,13 +8,15 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
 	"go.linka.cloud/grpc/errors"
+	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc/interceptors/metadata"
 )
 
 func BasicAuth(user, password string) string {
 	return "basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+password))
 }
 
-type BasicValidator func(ctx context.Context, user, password string) (context.Context,error)
+type BasicValidator func(ctx context.Context, user, password string) (context.Context, error)
 
 func makeBasicAuthFunc(v BasicValidator) grpc_auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
@@ -33,4 +35,8 @@ func makeBasicAuthFunc(v BasicValidator) grpc_auth.AuthFunc {
 		}
 		return v(ctx, cs[:s], cs[s+1:])
 	}
+}
+
+func NewBasicAuthClientIntereptors(user, password string) interceptors.ClientInterceptors {
+	return metadata.NewInterceptors("authorization", BasicAuth(user, password))
 }

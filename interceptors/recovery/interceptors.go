@@ -30,6 +30,3 @@ func (i *recovery) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 func (i *recovery) StreamClientInterceptor() grpc.StreamClientInterceptor {
 	panic("not implemented")
 }
-
-
-

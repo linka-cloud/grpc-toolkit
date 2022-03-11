@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -31,15 +32,25 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
+	_ = sort.Sort
 )
 
 // Validate checks the field values on HelloRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, an error
-// is returned. When asked to return all errors, validation continues after
-// first violation, and the result is a list of violation errors wrapped in
-// HelloRequestMultiError, or nil if none found. Otherwise, only the first
-// error is returned, if any.
-func (m *HelloRequest) Validate(all bool) error {
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *HelloRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on HelloRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in HelloRequestMultiError, or
+// nil if none found.
+func (m *HelloRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *HelloRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -64,8 +75,7 @@ func (m *HelloRequest) Validate(all bool) error {
 }
 
 // HelloRequestMultiError is an error wrapping multiple validation errors
-// returned by HelloRequest.Validate(true) if the designated constraints
-// aren't met.
+// returned by HelloRequest.ValidateAll() if the designated constraints aren't met.
 type HelloRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
@@ -135,12 +145,21 @@ var _ interface {
 } = HelloRequestValidationError{}
 
 // Validate checks the field values on HelloReply with the rules defined in the
-// proto definition for this message. If any rules are violated, an error is
-// returned. When asked to return all errors, validation continues after first
-// violation, and the result is a list of violation errors wrapped in
-// HelloReplyMultiError, or nil if none found. Otherwise, only the first error
-// is returned, if any.
-func (m *HelloReply) Validate(all bool) error {
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *HelloReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on HelloReply with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in HelloReplyMultiError, or
+// nil if none found.
+func (m *HelloReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *HelloReply) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -156,7 +175,7 @@ func (m *HelloReply) Validate(all bool) error {
 }
 
 // HelloReplyMultiError is an error wrapping multiple validation errors
-// returned by HelloReply.Validate(true) if the designated constraints aren't met.
+// returned by HelloReply.ValidateAll() if the designated constraints aren't met.
 type HelloReplyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
@@ -227,11 +246,20 @@ var _ interface {
 
 // Validate checks the field values on HelloStreamRequest with the rules
 // defined in the proto definition for this message. If any rules are
-// violated, an error is returned. When asked to return all errors, validation
-// continues after first violation, and the result is a list of violation
-// errors wrapped in HelloStreamRequestMultiError, or nil if none found.
-// Otherwise, only the first error is returned, if any.
-func (m *HelloStreamRequest) Validate(all bool) error {
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *HelloStreamRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on HelloStreamRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// HelloStreamRequestMultiError, or nil if none found.
+func (m *HelloStreamRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *HelloStreamRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -267,7 +295,7 @@ func (m *HelloStreamRequest) Validate(all bool) error {
 }
 
 // HelloStreamRequestMultiError is an error wrapping multiple validation errors
-// returned by HelloStreamRequest.Validate(true) if the designated constraints
+// returned by HelloStreamRequest.ValidateAll() if the designated constraints
 // aren't met.
 type HelloStreamRequestMultiError []error
 

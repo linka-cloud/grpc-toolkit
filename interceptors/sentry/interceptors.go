@@ -3,7 +3,7 @@ package sentry
 import (
 	"google.golang.org/grpc"
 
-	"github.com/johnbellone/grpc-middleware-sentry"
+	grpc_sentry "github.com/johnbellone/grpc-middleware-sentry"
 
 	"go.linka.cloud/grpc/interceptors"
 )
@@ -31,6 +31,3 @@ func (i *interceptor) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 func (i *interceptor) StreamClientInterceptor() grpc.StreamClientInterceptor {
 	return grpc_sentry.StreamClientInterceptor(i.opts...)
 }
-
-
-

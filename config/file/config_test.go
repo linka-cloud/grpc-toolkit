@@ -18,7 +18,7 @@ import (
 	"go.linka.cloud/grpc/config"
 )
 
-func newConfigFile(t *testing.T) (config.Config, string, func()){
+func newConfigFile(t *testing.T) (config.Config, string, func()) {
 	path := filepath.Join(os.TempDir(), "config.yaml")
 	if err := ioutil.WriteFile(path, []byte("ok"), os.ModePerm); err != nil {
 		t.Fatal(err)
@@ -65,7 +65,7 @@ func TestWatch(t *testing.T) {
 		}
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
 		err := ioutil.WriteFile(cpath, []byte("foo: baz\n"), 0o640)
-		b := <- updates
+		b := <-updates
 		// then the config value should have changed
 		require.Nil(t, err)
 		assert.Equal(t, []byte("foo: baz\n"), b)

@@ -102,11 +102,11 @@ func TestChainedAuthFuncs(t *testing.T) {
 			code: codes.PermissionDenied,
 		},
 		{
-			name: "internal error",
-			auth: "bearer internal",
+			name:          "internal error",
+			auth:          "bearer internal",
 			internalError: true,
-			err: true,
-			code: codes.PermissionDenied,
+			err:           true,
+			code:          codes.PermissionDenied,
 		},
 		{
 			name: "multiple auth: first basic valid",

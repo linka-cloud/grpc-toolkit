@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	greflect "google.golang.org/grpc/reflection"
 
+	"go.linka.cloud/grpc/interceptors/metadata"
 	"go.linka.cloud/grpc/registry"
 	"go.linka.cloud/grpc/registry/noop"
 )
@@ -74,32 +75,18 @@ func newService(opts ...Option) (*service, error) {
 		f(s.opts)
 	}
 	if s.opts.name != "" {
-		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{mdInterceptors{
-			k: "grpc-service-name", v: s.opts.name,
-		}.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
-		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{mdInterceptors{
-			k: "grpc-service-name", v: s.opts.name,
-		}.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
-		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{mdInterceptors{
-			k: "grpc-service-name", v: s.opts.name,
-		}.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
-		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{mdInterceptors{
-			k: "grpc-service-name", v: s.opts.name,
-		}.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
+		i := metadata.NewInterceptors("grpc-service-name", s.opts.name)
+		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{i.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
+		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{i.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
+		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{i.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
+		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{i.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
 	}
 	if s.opts.version != "" {
-		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{mdInterceptors{
-			k: "grpc-service-version", v: s.opts.version,
-		}.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
-		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{mdInterceptors{
-			k: "grpc-service-version", v: s.opts.version,
-		}.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
-		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{mdInterceptors{
-			k: "grpc-service-version", v: s.opts.version,
-		}.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
-		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{mdInterceptors{
-			k: "grpc-service-version", v: s.opts.version,
-		}.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
+		i := metadata.NewInterceptors("grpc-service-version", s.opts.version)
+		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{i.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
+		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{i.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
+		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{i.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
+		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{i.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
 	}
 	if s.opts.mux == nil {
 		s.opts.mux = http.NewServeMux()

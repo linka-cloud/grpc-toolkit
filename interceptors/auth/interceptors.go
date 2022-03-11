@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/subtle"
 	"strings"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -40,8 +41,8 @@ func NewServerInterceptors(opts ...Option) interceptors.ServerInterceptors {
 	return &interceptor{o: o, authFn: ChainedAuthFuncs(o.authFns...)}
 }
 
-type interceptor struct{
-	o options
+type interceptor struct {
+	o      options
 	authFn grpc_auth.AuthFunc
 }
 
@@ -91,4 +92,8 @@ func (i *interceptor) isNotProtected(endpoint string) bool {
 		}
 	}
 	return true
+}
+
+func Equals(s1, s2 string) bool {
+	return subtle.ConstantTimeCompare([]byte(s1), []byte(s2)) == 1
 }
