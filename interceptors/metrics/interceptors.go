@@ -22,6 +22,7 @@ type ServerInterceptors interface {
 	Registerer
 	interceptors.ServerInterceptors
 	prometheus.Collector
+	EnableHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption)
 }
 
 type ClientInterceptors interface {
@@ -31,6 +32,12 @@ type ClientInterceptors interface {
 type metrics struct {
 	s *grpc_prometheus.ServerMetrics
 	c *grpc_prometheus.ClientMetrics
+}
+
+func (m *metrics) EnableHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
+	if m.s != nil {
+		m.s.EnableHandlingTimeHistogram(opts...)
+	}
 }
 
 func (m *metrics) Describe(descs chan<- *prometheus.Desc) {
