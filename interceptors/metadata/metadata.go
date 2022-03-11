@@ -37,18 +37,14 @@ func (i mdInterceptors) StreamServerInterceptor() grpc.StreamServerInterceptor {
 
 func (i mdInterceptors) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		if err := grpc.SetHeader(ctx, metadata.Pairs(i.pairs...)); err != nil {
-			return err
-		}
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(i.pairs...))
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
 
 func (i mdInterceptors) StreamClientInterceptor() grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		if err := grpc.SetHeader(ctx, metadata.Pairs(i.pairs...)); err != nil {
-			return nil, err
-		}
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(i.pairs...))
 		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
