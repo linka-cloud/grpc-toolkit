@@ -5,42 +5,63 @@ import (
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc/service"
 )
 
-var (
-	Register = grpc_prometheus.Register
-)
+type Registerer interface {
+	Register(svc service.Service)
+}
+
+type Interceptors interface {
+	interceptors.Interceptors
+	Registerer
+}
+
+type ServerInterceptors interface {
+	interceptors.ServerInterceptors
+	Registerer
+}
+
+type ClientInterceptors interface {
+	interceptors.ClientInterceptors
+}
 
 type metrics struct {
 	s *grpc_prometheus.ServerMetrics
 	c *grpc_prometheus.ClientMetrics
 }
 
-func NewInterceptors(opts ...grpc_prometheus.CounterOption) interceptors.Interceptors {
+func (m *metrics) Register(svc service.Service) {
+	if m.s != nil {
+		m.s.InitializeMetrics(svc)
+	}
+}
+
+func NewInterceptors(opts ...grpc_prometheus.CounterOption) Interceptors {
 	s := grpc_prometheus.NewServerMetrics(opts...)
 	c := grpc_prometheus.NewClientMetrics(opts...)
 	return &metrics{s: s, c: c}
 }
 
-func NewServerInterceptors(opts ...grpc_prometheus.CounterOption) interceptors.ServerInterceptors {
+func NewServerInterceptors(opts ...grpc_prometheus.CounterOption) ServerInterceptors {
 	s := grpc_prometheus.NewServerMetrics(opts...)
 	return &metrics{s: s}
 }
 
-func NewClientInterceptors(opts ...grpc_prometheus.CounterOption) interceptors.ClientInterceptors {
+func NewClientInterceptors(opts ...grpc_prometheus.CounterOption) ClientInterceptors {
 	c := grpc_prometheus.NewClientMetrics(opts...)
 	return &metrics{c: c}
 }
 
-func DefaultInterceptors() interceptors.Interceptors {
+func DefaultInterceptors() Interceptors {
 	return &metrics{s: grpc_prometheus.DefaultServerMetrics, c: grpc_prometheus.DefaultClientMetrics}
 }
 
-func DefaultServerInterceptors() interceptors.ServerInterceptors {
+func DefaultServerInterceptors() ServerInterceptors {
 	return &metrics{s: grpc_prometheus.DefaultServerMetrics}
 }
 
-func DefaultClientInterceptors() interceptors.ClientInterceptors {
+func DefaultClientInterceptors() ClientInterceptors {
 	return &metrics{c: grpc_prometheus.DefaultClientMetrics}
 }
 
