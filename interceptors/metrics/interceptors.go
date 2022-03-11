@@ -2,6 +2,7 @@ package metrics
 
 import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc/interceptors"
@@ -13,13 +14,14 @@ type Registerer interface {
 }
 
 type Interceptors interface {
-	interceptors.Interceptors
-	Registerer
+	ServerInterceptors
+	ClientInterceptors
 }
 
 type ServerInterceptors interface {
-	interceptors.ServerInterceptors
 	Registerer
+	interceptors.ServerInterceptors
+	prometheus.Collector
 }
 
 type ClientInterceptors interface {
@@ -29,6 +31,18 @@ type ClientInterceptors interface {
 type metrics struct {
 	s *grpc_prometheus.ServerMetrics
 	c *grpc_prometheus.ClientMetrics
+}
+
+func (m *metrics) Describe(descs chan<- *prometheus.Desc) {
+	if m.s != nil {
+		m.s.Describe(descs)
+	}
+}
+
+func (m *metrics) Collect(c chan<- prometheus.Metric) {
+	if m.s != nil {
+		m.s.Collect(c)
+	}
 }
 
 func (m *metrics) Register(svc service.Service) {
