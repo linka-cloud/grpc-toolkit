@@ -231,3 +231,100 @@ func Unauthenticatedf(msg string, args ...interface{}) error {
 func Unauthenticatedd(err error, details ...proto.Message) error {
 	return statusErr(codes.Unauthenticated, err, details...)
 }
+
+func IsCanceled(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Canceled
+}
+func IsUnknown(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Unknown
+}
+func IsInvalidArgument(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.InvalidArgument
+}
+func IsDeadlineExceeded(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.DeadlineExceeded
+}
+func IsNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.NotFound
+}
+func IsAlreadyExists(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.AlreadyExists
+}
+func IsPermissionDenied(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.PermissionDenied
+}
+func IsResourceExhausted(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.ResourceExhausted
+}
+func IsFailedPrecondition(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.FailedPrecondition
+}
+func IsAborted(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Aborted
+}
+func IsOutOfRange(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.OutOfRange
+}
+func IsUnimplemented(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Unimplemented
+}
+func IsInternal(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Internal
+}
+func IsUnavailable(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Unavailable
+}
+func IsDataLoss(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.DataLoss
+}
+func IsUnauthenticated(err error) bool {
+	if err == nil {
+		return false
+	}
+	return status.Convert(err).Code() == codes.Unauthenticated
+}
