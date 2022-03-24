@@ -4,10 +4,12 @@ go 1.13
 
 require (
 	github.com/alta/protopatch v0.3.4
+	github.com/bombsimon/logrusr/v2 v2.0.1
 	github.com/caitlinelfring/go-env-default v1.1.0
 	github.com/envoyproxy/protoc-gen-validate v0.6.2
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/fullstorydev/grpchan v1.1.1
+	github.com/go-logr/logr v1.2.3
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -19,10 +21,8 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/johnbellone/grpc-middleware-sentry v0.2.0
 	github.com/justinas/alice v1.2.0
-	github.com/kr/text v0.2.0 // indirect
 	github.com/lyft/protoc-gen-star v0.6.0 // indirect
 	github.com/miekg/dns v1.1.41
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/planetscale/vtprotobuf v0.2.0
 	github.com/prometheus/client_golang v1.11.0
@@ -42,7 +42,6 @@ require (
 	google.golang.org/grpc v1.45.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
 
 replace (

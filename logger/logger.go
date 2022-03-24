@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bombsimon/logrusr/v2"
+	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,6 +26,7 @@ type Logger interface {
 	WithFields(kv ...interface{}) Logger
 	WithError(err error) Logger
 
+	SetLevel(level logrus.Level) Logger
 	WriterLevel(level logrus.Level) *io.PipeWriter
 
 	Debugf(format string, args ...interface{})
@@ -52,6 +55,8 @@ type Logger interface {
 	Errorln(args ...interface{})
 	Fatalln(args ...interface{})
 	Panicln(args ...interface{})
+
+	Logr() logr.Logger
 }
 
 type logger struct {
@@ -161,7 +166,19 @@ func (l *logger) WriterLevel(level logrus.Level) *io.PipeWriter {
 	case *logrus.Entry:
 		return t.WriterLevel(level)
 	}
-	panic(fmt.Sprintf("unsupporter logger type %T", l.fl))
+	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
+}
+
+func (l *logger) SetLevel(level logrus.Level) Logger {
+	switch t := l.fl.(type) {
+	case *logrus.Logger:
+		t.SetLevel(level)
+		return l
+	case *logrus.Entry:
+		t.Logger.SetLevel(level)
+		return l
+	}
+	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
 }
 
 func (l *logger) WithField(key string, value interface{}) Logger {
@@ -178,4 +195,8 @@ func (l *logger) WithFields(kv ...interface{}) Logger {
 
 func (l *logger) WithError(err error) Logger {
 	return &logger{fl: l.fl.WithError(err)}
+}
+
+func (l *logger) Logr() logr.Logger {
+	return logrusr.New(l.fl)
 }
