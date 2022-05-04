@@ -52,7 +52,7 @@ func errToStatus(err error) error {
 	}
 	switch v := err.(type) {
 	case validatorError:
-		return errors.InvalidArgumentD(err, validatorErrorToGrpc(v))
+		return errors.InvalidArgumentd(err, validatorErrorToGrpc(v))
 	case validatorMultiError:
 		var details []proto.Message
 		for _, v := range v.AllErrors() {
