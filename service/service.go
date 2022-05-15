@@ -270,9 +270,14 @@ func (s *service) Stop() error {
 	sigs := s.notify()
 	done := make(chan struct{})
 	go func() {
+		defer close(done)
+		// TODO(adphi): find a better solution
+		defer func() {
+			// catch: Drain() is not implemented
+			recover()
+		}()
 		logrus.Warn("shutting down gracefully")
 		s.server.GracefulStop()
-		close(done)
 	}()
 	select {
 	case sig := <-sigs:
