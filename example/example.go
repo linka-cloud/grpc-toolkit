@@ -120,7 +120,7 @@ func run(opts ...service.Option) {
 		panic(err)
 	}
 	RegisterGreeterServer(svc, &GreeterHandler{})
-	metrics2.Register(svc)
+	metrics.Register(svc)
 	go func() {
 		if err := svc.Start(); err != nil {
 			panic(err)
