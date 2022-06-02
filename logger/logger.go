@@ -57,6 +57,7 @@ type Logger interface {
 	Panicln(args ...interface{})
 
 	Logr() logr.Logger
+	FieldLogger() logrus.FieldLogger
 }
 
 type logger struct {
@@ -199,4 +200,8 @@ func (l *logger) WithError(err error) Logger {
 
 func (l *logger) Logr() logr.Logger {
 	return logrusr.New(l.fl)
+}
+
+func (l *logger) FieldLogger() logrus.FieldLogger {
+	return l.fl
 }
