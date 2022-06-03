@@ -133,6 +133,9 @@ func newService(opts ...Option) (*service, error) {
 	if err := s.gateway(s.opts.gatewayOpts...); err != nil {
 		return nil, err
 	}
+	if err := s.reactApp(); err != nil {
+		return nil, err
+	}
 	// we do not configure grpc web here as the grpc handlers are not yet registered
 	return s, nil
 }
@@ -203,7 +206,7 @@ func (s *service) run() error {
 	hServer := &http.Server{
 		Handler: alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
 	}
-	if s.opts.Gateway() || s.opts.grpcWeb {
+	if s.opts.Gateway() || s.opts.grpcWeb || s.opts.hasReactUI {
 		go func() {
 			errs <- hServer.Serve(hList)
 			hServer.Shutdown(s.opts.ctx)
