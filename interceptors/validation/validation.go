@@ -5,7 +5,6 @@ import (
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
 
 	"go.linka.cloud/grpc/errors"
 	"go.linka.cloud/grpc/interceptors"
@@ -52,15 +51,15 @@ func errToStatus(err error) error {
 	}
 	switch v := err.(type) {
 	case validatorError:
-		return errors.InvalidArgumentd(err, validatorErrorToGrpc(v))
+		return errors.InvalidArgumentd(err, &errdetails.BadRequest{FieldViolations: []*errdetails.BadRequest_FieldViolation{validatorErrorToGrpc(v)}})
 	case validatorMultiError:
-		var details []proto.Message
+		details := &errdetails.BadRequest{}
 		for _, v := range v.AllErrors() {
 			if d, ok := v.(validatorError); ok {
-				details = append(details, validatorErrorToGrpc(d))
+				details.FieldViolations = append(details.FieldViolations, validatorErrorToGrpc(d))
 			}
 		}
-		return errors.InvalidArgumentd(err, details...)
+		return errors.InvalidArgumentd(err, details)
 	default:
 		return errors.InvalidArgument(err)
 	}
