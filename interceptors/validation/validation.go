@@ -38,10 +38,24 @@ type validatorError interface {
 	ErrorName() string
 }
 
-func validatorErrorToGrpc(e validatorError) *errdetails.BadRequest_FieldViolation {
-	return &errdetails.BadRequest_FieldViolation{
-		Field:       e.Field(),
-		Description: e.Reason(),
+func validatorErrorToGrpc(e validatorError, prefix string) []*errdetails.BadRequest_FieldViolation {
+	// check nested errors for validation error, e.g. "embedded message failed validation"
+	switch v := e.Cause().(type) {
+	case validatorError:
+		return validatorErrorToGrpc(v, e.Field()+".")
+	case validatorMultiError:
+		var details []*errdetails.BadRequest_FieldViolation
+		for _, vv := range v.AllErrors() {
+			if ee, ok := vv.(validatorError); ok {
+				details = append(details, validatorErrorToGrpc(ee, e.Field()+".")...)
+			}
+		}
+		return details
+	default:
+		return []*errdetails.BadRequest_FieldViolation{{
+			Field:       prefix + e.Field(),
+			Description: e.Reason(),
+		}}
 	}
 }
 
@@ -51,12 +65,12 @@ func errToStatus(err error) error {
 	}
 	switch v := err.(type) {
 	case validatorError:
-		return errors.InvalidArgumentd(err, &errdetails.BadRequest{FieldViolations: []*errdetails.BadRequest_FieldViolation{validatorErrorToGrpc(v)}})
+		return errors.InvalidArgumentd(err, &errdetails.BadRequest{FieldViolations: validatorErrorToGrpc(v, "")})
 	case validatorMultiError:
 		details := &errdetails.BadRequest{}
 		for _, v := range v.AllErrors() {
 			if d, ok := v.(validatorError); ok {
-				details.FieldViolations = append(details.FieldViolations, validatorErrorToGrpc(d))
+				details.FieldViolations = append(details.FieldViolations, validatorErrorToGrpc(d, "")...)
 			}
 		}
 		return errors.InvalidArgumentd(err, details)
