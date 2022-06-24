@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.linka.cloud/grpc/client"
+	"go.linka.cloud/grpc/interceptors/auth"
 	"go.linka.cloud/grpc/interceptors/defaulter"
 	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
 	validation2 "go.linka.cloud/grpc/interceptors/validation"
@@ -113,7 +114,15 @@ func run(opts ...service.Option) {
 		service.WithGRPCWeb(true),
 		service.WithGRPCWebPrefix("/grpc"),
 		service.WithMiddlewares(httpLogger),
-		service.WithInterceptors(metrics, defaulter, validation),
+		service.WithInterceptors(metrics),
+		service.WithServerInterceptors(auth.NewServerInterceptors(auth.WithBasicValidators(func(ctx context.Context, user, password string) (context.Context, error) {
+			if !auth.Equals(user, "admin") || !auth.Equals(password, "admin") {
+				return ctx, fmt.Errorf("invalid user or password")
+			}
+			log.Infof("request authenticated")
+			return ctx, nil
+		}))),
+		service.WithInterceptors(defaulter, validation),
 	)
 	svc, err = service.New(opts...)
 	if err != nil {
@@ -143,6 +152,7 @@ func run(opts ...service.Option) {
 			logger.From(ctx).WithFields("party", "client", "method", method).Info(req)
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}),
+		client.WithInterceptors(auth.NewBasicAuthClientIntereptors("admin", "admin")),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -193,7 +203,13 @@ func run(opts ...service.Option) {
 	req := `{"name":"test"}`
 
 	do := func(url, contentType string) {
-		resp, err := httpc.Post(url, contentType, strings.NewReader(req))
+		req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(req))
+		if err != nil {
+			log.Fatal(err)
+		}
+		req.Header.Set("content-type", contentType)
+		req.Header.Set("authorization", auth.BasicAuth("admin", "admin"))
+		resp, err := httpc.Do(req)
 		if err != nil {
 			log.Fatal(err)
 		}

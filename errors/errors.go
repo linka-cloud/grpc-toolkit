@@ -1,12 +1,20 @@
 package errors
 
 import (
+	"context"
+	"errors"
+	"strings"
+
 	status2 "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
+
+func Canceled(err error) error {
+	return status.Error(codes.Canceled, err.Error())
+}
 
 func InvalidArgument(err error) error {
 	return status.Error(codes.InvalidArgument, err.Error())
@@ -63,6 +71,12 @@ func makeDetails(m ...proto.Message) []*anypb.Any {
 	return out
 }
 
+func Canceledf(msg string, args ...interface{}) error {
+	return status.Errorf(codes.Canceled, msg, args...)
+}
+func Canceledd(err error, details ...proto.Message) error {
+	return statusErr(codes.Canceled, err, details...)
+}
 func InvalidArgumentf(msg string, args ...interface{}) error {
 	return status.Errorf(codes.InvalidArgument, msg, args...)
 }
@@ -152,7 +166,7 @@ func IsCanceled(err error) bool {
 	if err == nil {
 		return false
 	}
-	return status.Convert(err).Code() == codes.Canceled
+	return status.Convert(err).Code() == codes.Canceled || IsCanceled(err)
 }
 func IsUnknown(err error) bool {
 	if err == nil {
@@ -170,7 +184,7 @@ func IsDeadlineExceeded(err error) bool {
 	if err == nil {
 		return false
 	}
-	return status.Convert(err).Code() == codes.DeadlineExceeded
+	return status.Convert(err).Code() == codes.DeadlineExceeded || IsContextDeadlineExceeded(err)
 }
 func IsNotFound(err error) bool {
 	if err == nil {
@@ -243,4 +257,31 @@ func IsUnauthenticated(err error) bool {
 		return false
 	}
 	return status.Convert(err).Code() == codes.Unauthenticated
+}
+
+func IsContextCanceled(err error) bool {
+	err = Unwrap(err)
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), context.Canceled.Error())
+}
+
+func IsContextDeadlineExceeded(err error) bool {
+	err = Unwrap(err)
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), context.DeadlineExceeded.Error())
+}
+
+func Unwrap(err error) error {
+	s, ok := status.FromError(err)
+	if s == nil {
+		return nil
+	}
+	if ok {
+		return errors.New(s.Message())
+	}
+	return err
 }
