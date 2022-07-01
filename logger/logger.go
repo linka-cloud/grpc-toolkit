@@ -29,6 +29,8 @@ type Logger interface {
 	SetLevel(level logrus.Level) Logger
 	WriterLevel(level logrus.Level) *io.PipeWriter
 
+	SetOutput(w io.Writer) Logger
+
 	Debugf(format string, args ...interface{})
 	Infof(format string, args ...interface{})
 	Printf(format string, args ...interface{})
@@ -204,4 +206,16 @@ func (l *logger) Logr() logr.Logger {
 
 func (l *logger) FieldLogger() logrus.FieldLogger {
 	return l.fl
+}
+
+func (l *logger) SetOutput(w io.Writer) Logger {
+	switch t := l.fl.(type) {
+	case *logrus.Logger:
+		t.SetOutput(w)
+		return l
+	case *logrus.Entry:
+		t.Logger.SetOutput(w)
+		return l
+	}
+	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
 }
