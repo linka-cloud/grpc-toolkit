@@ -21,6 +21,10 @@ func New() Logger {
 	return &logger{fl: logrus.New()}
 }
 
+func FromLogrus(fl logrus.FieldLogger) Logger {
+	return &logger{fl: fl}
+}
+
 type Logger interface {
 	WithField(key string, value interface{}) Logger
 	WithFields(kv ...interface{}) Logger

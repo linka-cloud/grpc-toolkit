@@ -20,7 +20,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/justinas/alice"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/multierr"
 	"google.golang.org/grpc"
@@ -29,6 +28,7 @@ import (
 	greflect "google.golang.org/grpc/reflection"
 
 	"go.linka.cloud/grpc/interceptors/metadata"
+	"go.linka.cloud/grpc/logger"
 	"go.linka.cloud/grpc/registry"
 	"go.linka.cloud/grpc/registry/noop"
 )
@@ -240,11 +240,11 @@ func (s *service) run() error {
 	select {
 	case sig := <-sigs:
 		fmt.Println()
-		logrus.Warnf("received %v", sig)
+		logger.C(s.opts.ctx).Warnf("received %v", sig)
 		return s.Close()
 	case err := <-errs:
 		if err != nil && !ignoreMuxError(err) {
-			logrus.Error(err)
+			logger.C(s.opts.ctx).Error(err)
 			return err
 		}
 		return nil
@@ -256,6 +256,7 @@ func (s *service) Start() error {
 }
 
 func (s *service) Stop() error {
+	log := logger.C(s.opts.ctx)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !s.running {
@@ -267,7 +268,7 @@ func (s *service) Stop() error {
 		}
 	}
 	if err := s.opts.registry.Deregister(s.regSvc); err != nil {
-		logrus.Errorf("failed to deregister service: %v", err)
+		log.Errorf("failed to deregister service: %v", err)
 	}
 	defer close(s.closed)
 	sigs := s.notify()
@@ -279,14 +280,14 @@ func (s *service) Stop() error {
 			// catch: Drain() is not implemented
 			recover()
 		}()
-		logrus.Warn("shutting down gracefully")
+		log.Warn("shutting down gracefully")
 		s.server.GracefulStop()
 	}()
 	select {
 	case sig := <-sigs:
 		fmt.Println()
-		logrus.Warnf("received %v", sig)
-		logrus.Warn("forcing shutdown")
+		log.Warnf("received %v", sig)
+		log.Warn("forcing shutdown")
 		s.server.Stop()
 	case <-done:
 	}
@@ -297,7 +298,7 @@ func (s *service) Stop() error {
 			return err
 		}
 	}
-	logrus.Info("server stopped")
+	log.Info("server stopped")
 	return nil
 }
 
@@ -322,7 +323,7 @@ func (s *service) registerService(sd *grpc.ServiceDesc, ss interface{}) {
 	s.inproc.RegisterService(sd, ss)
 
 	if _, ok := s.services[sd.ServiceName]; ok {
-		logrus.Fatalf("grpc: Service.RegisterService found duplicate service registration for %q", sd.ServiceName)
+		logger.C(s.opts.ctx).Fatalf("grpc: Service.RegisterService found duplicate service registration for %q", sd.ServiceName)
 	}
 	info := &serviceInfo{
 		serviceImpl: ss,

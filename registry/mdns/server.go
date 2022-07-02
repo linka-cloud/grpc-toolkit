@@ -194,7 +194,7 @@ func (s *Server) recv(c *net.UDPConn) {
 			continue
 		}
 		if err := s.parsePacket(buf[:n], from); err != nil {
-			logrus.Errorf("[ERR] mdns: Failed to handle query: %v", err)
+			logrus.Errorf("mdns: Failed to handle query: %v", err)
 		}
 	}
 }
@@ -203,7 +203,7 @@ func (s *Server) recv(c *net.UDPConn) {
 func (s *Server) parsePacket(packet []byte, from net.Addr) error {
 	var msg dns.Msg
 	if err := msg.Unpack(packet); err != nil {
-		logrus.Errorf("[ERR] mdns: Failed to unpack packet: %v", err)
+		logrus.Errorf("mdns: Failed to unpack packet: %v", err)
 		return err
 	}
 	// TODO: This is a bit of a hack
