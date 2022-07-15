@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	greflectsvc "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/protobuf/proto"
@@ -22,10 +23,16 @@ import (
 	"go.linka.cloud/grpc/client"
 	"go.linka.cloud/grpc/interceptors/auth"
 	"go.linka.cloud/grpc/interceptors/defaulter"
+	"go.linka.cloud/grpc/interceptors/iface"
 	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
 	validation2 "go.linka.cloud/grpc/interceptors/validation"
 	"go.linka.cloud/grpc/logger"
 	"go.linka.cloud/grpc/service"
+)
+
+var (
+	_ iface.UnaryInterceptor  = (*GreeterHandler)(nil)
+	_ iface.StreamInterceptor = (*GreeterHandler)(nil)
 )
 
 type GreeterHandler struct {
@@ -48,6 +55,20 @@ func (g *GreeterHandler) SayHelloStream(req *HelloStreamRequest, s Greeter_SayHe
 		// time.Sleep(time.Second)
 	}
 	return nil
+}
+
+func (g *GreeterHandler) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		logger.C(ctx).Infof("called service interface unary interceptor")
+		return handler(ctx, req)
+	}
+}
+
+func (g *GreeterHandler) StreamServerInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		logger.C(ss.Context()).Infof("called service interface stream interceptor")
+		return handler(srv, ss)
+	}
 }
 
 func httpLogger(next http.Handler) http.Handler {
@@ -115,14 +136,18 @@ func run(opts ...service.Option) {
 		service.WithGRPCWebPrefix("/grpc"),
 		service.WithMiddlewares(httpLogger),
 		service.WithInterceptors(metrics),
-		service.WithServerInterceptors(auth.NewServerInterceptors(auth.WithBasicValidators(func(ctx context.Context, user, password string) (context.Context, error) {
-			if !auth.Equals(user, "admin") || !auth.Equals(password, "admin") {
-				return ctx, fmt.Errorf("invalid user or password")
-			}
-			log.Infof("request authenticated")
-			return ctx, nil
-		}))),
+		service.WithServerInterceptors(
+			auth.NewServerInterceptors(auth.WithBasicValidators(func(ctx context.Context, user, password string) (context.Context, error) {
+				if !auth.Equals(user, "admin") || !auth.Equals(password, "admin") {
+					return ctx, fmt.Errorf("invalid user or password")
+				}
+				log.Infof("request authenticated")
+				return ctx, nil
+			})),
+		),
 		service.WithInterceptors(defaulter, validation),
+		// enable server interface interceptor
+		service.WithServerInterceptors(iface.New()),
 	)
 	svc, err = service.New(opts...)
 	if err != nil {
@@ -158,7 +183,13 @@ func run(opts ...service.Option) {
 		log.Fatal(err)
 	}
 	g := NewGreeterClient(s)
-	defer cancel()
+	h := grpc_health_v1.NewHealthClient(s)
+	hres, err := h.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Infof("status: %v", hres.Status)
+
 	md := metadata.MD{}
 	res, err := g.SayHello(ctx, &HelloRequest{Name: "test"}, grpc.Header(&md))
 	if err != nil {
