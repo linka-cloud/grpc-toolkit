@@ -6,12 +6,14 @@ import (
 
 type Option func(o *options)
 
+// WithMethods change the behaviour to not protect by default, it takes a list of fully qualified method names to protect, e.g. /helloworld.Greeter/SayHello
 func WithMethods(methods ...string) Option {
 	return func(o *options) {
 		o.methods = append(o.methods, methods...)
 	}
 }
 
+// WithIgnoredMethods bypass auth for the given methods, it takes a list of fully qualified method name, e.g. /helloworld.Greeter/SayHello
 func WithIgnoredMethods(methods ...string) Option {
 	return func(o *options) {
 		o.ignoredMethods = append(o.ignoredMethods, methods...)

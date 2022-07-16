@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/subtle"
-	"strings"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc"
@@ -71,15 +70,8 @@ func (i *interceptor) isNotProtected(endpoint string) bool {
 	if len(i.o.ignoredMethods) == 0 && len(i.o.methods) == 0 {
 		return false
 	}
-	// endpoint is like /helloworld.Greeter/SayHello
-	parts := strings.Split(strings.TrimPrefix(endpoint, "/"), "/")
-	// invalid endpoint format
-	if len(parts) != 2 {
-		return false
-	}
-	method := parts[1]
 	for _, v := range i.o.ignoredMethods {
-		if v == method {
+		if v == endpoint {
 			return true
 		}
 	}
@@ -87,7 +79,7 @@ func (i *interceptor) isNotProtected(endpoint string) bool {
 		return false
 	}
 	for _, v := range i.o.methods {
-		if v == method {
+		if v == endpoint {
 			return false
 		}
 	}

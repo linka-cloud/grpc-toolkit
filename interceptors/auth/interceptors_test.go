@@ -15,21 +15,21 @@ import (
 
 func TestNotProtectededOnly(t *testing.T) {
 	assert := assert2.New(t)
-	i := &interceptor{o: options{ignoredMethods: []string{"ignored"}}}
+	i := &interceptor{o: options{ignoredMethods: []string{"/test.Service/ignored"}}}
 	assert.False(i.isNotProtected("/test.Service/protected"))
 	assert.True(i.isNotProtected("/test.Service/ignored"))
 }
 
 func TestProtectedOnly(t *testing.T) {
 	assert := assert2.New(t)
-	i := &interceptor{o: options{methods: []string{"protected"}}}
+	i := &interceptor{o: options{methods: []string{"/test.Service/protected"}}}
 	assert.False(i.isNotProtected("/test.Service/protected"))
 	assert.True(i.isNotProtected("/test.Service/ignored"))
 }
 
 func TestProtectedAndIgnored(t *testing.T) {
 	assert := assert2.New(t)
-	i := &interceptor{o: options{methods: []string{"protected"}, ignoredMethods: []string{"ignored"}}}
+	i := &interceptor{o: options{methods: []string{"/test.Service/protected"}, ignoredMethods: []string{"/test.Service/ignored"}}}
 	assert.True(i.isNotProtected("/test.Service/ignored"))
 	assert.False(i.isNotProtected("/test.Service/protected"))
 	assert.True(i.isNotProtected("/test.Service/other"))
@@ -37,7 +37,7 @@ func TestProtectedAndIgnored(t *testing.T) {
 
 func TestProtectedByDefault(t *testing.T) {
 	i := &interceptor{}
-	assert2.False(t, i.isNotProtected("nooop"))
+	assert2.False(t, i.isNotProtected("/test.Service/noop"))
 	assert2.False(t, i.isNotProtected("/test.Service/method/cannotExists"))
 	assert2.False(t, i.isNotProtected("/test.Service/validMethod"))
 }
