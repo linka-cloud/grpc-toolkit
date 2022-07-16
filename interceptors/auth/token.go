@@ -22,5 +22,5 @@ func makeTokenAuthFunc(v TokenValidator) grpc_auth.AuthFunc {
 }
 
 func NewBearerClientInterceptors(token string) interceptors.ClientInterceptors {
-	return metadata.NewInterceptors("authorization", "Bearer "+token)
+	return metadata.NewInterceptors("authorization", "bearer "+token)
 }
