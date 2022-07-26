@@ -12,9 +12,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"github.com/jinzhu/gorm"
 	"github.com/rs/cors"
-	"go.uber.org/multierr"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc/certs"
@@ -24,34 +22,7 @@ import (
 	"go.linka.cloud/grpc/utils/addr"
 )
 
-/*
-GLOBAL OPTIONS:
-   	--client value                  Client for go-micro; rpc [$MICRO_CLIENT]
-   	--client_request_timeout value  Sets the client request timeout. e.g 500ms, 5s, 1m. Default: 5s [$MICRO_CLIENT_REQUEST_TIMEOUT]
-   	--client_retries value          Sets the client retries. Default: 1 (default: 1) [$MICRO_CLIENT_RETRIES]
-   	--client_pool_size value        Sets the client connection pool size. Default: 1 (default: 0) [$MICRO_CLIENT_POOL_SIZE]
-   	--client_pool_ttl value         Sets the client connection pool ttl. e.g 500ms, 5s, 1m. Default: 1m [$MICRO_CLIENT_POOL_TTL]
-   	--help, -h                      show help
-
-	--secure				  SECURE
-	--ca_cert				  CA_CERT
-	--server_cert			  SERVER_CERT
-	--server_key			  SERVER_KEY
-
-   	--register_ttl            REGISTER_TTL
-	--register_interval       REGISTER_INTERVAL
-
-	--server_address          SERVER_ADDRESS
-   	--server_name             SERVER_NAME
-
-	--broker                  BROKER
-   	--broker_address          BROKER_ADDRESS
-
-	--registry                REGISTRY
-   	--registry_address        REGISTRY_ADDRESS
-
-	--db_path                 DB_PATH
-*/
+var _ Options = (*options)(nil)
 
 type RegisterGatewayFunc func(ctx context.Context, mux *runtime.ServeMux, cc grpc.ClientConnInterface) error
 
@@ -71,8 +42,6 @@ type Options interface {
 	Secure() bool
 
 	Registry() registry.Registry
-
-	DB() *gorm.DB
 
 	BeforeStart() []func() error
 	AfterStart() []func() error
@@ -197,14 +166,6 @@ func WithCert(path string) Option {
 func WithKey(path string) Option {
 	return func(o *options) {
 		o.key = path
-	}
-}
-
-func WithDB(dialect string, args ...interface{}) Option {
-	db, err := gorm.Open(dialect, args...)
-	return func(o *options) {
-		o.db = db
-		o.error = multierr.Append(o.error, err)
 	}
 }
 
@@ -379,8 +340,6 @@ type options struct {
 	key       string
 	tlsConfig *tls.Config
 
-	db *gorm.DB
-
 	transport transport.Transport
 	registry  registry.Registry
 
@@ -460,10 +419,6 @@ func (o *options) TLSConfig() *tls.Config {
 
 func (o *options) Secure() bool {
 	return o.secure
-}
-
-func (o *options) DB() *gorm.DB {
-	return o.db
 }
 
 func (o *options) BeforeStart() []func() error {

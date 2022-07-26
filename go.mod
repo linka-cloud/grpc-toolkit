@@ -18,7 +18,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645
 	github.com/improbable-eng/grpc-web v0.14.1
-	github.com/jinzhu/gorm v1.9.12
 	github.com/johnbellone/grpc-middleware-sentry v0.2.0
 	github.com/justinas/alice v1.2.0
 	github.com/lyft/protoc-gen-star v0.6.0 // indirect

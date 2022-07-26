@@ -17,7 +17,6 @@ import (
 	"github.com/fullstorydev/grpchan/inprocgrpc"
 	"github.com/google/uuid"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/jinzhu/gorm"
 	"github.com/justinas/alice"
 	"github.com/rs/cors"
 	"github.com/soheilhy/cmux"
@@ -36,7 +35,6 @@ type Service interface {
 	greflect.GRPCServer
 
 	Options() Options
-	DB() *gorm.DB
 	Start() error
 	Stop() error
 	Close() error
@@ -136,10 +134,6 @@ func newService(opts ...Option) (*service, error) {
 
 func (s *service) Options() Options {
 	return s.opts
-}
-
-func (s *service) DB() *gorm.DB {
-	return s.opts.db
 }
 
 func (s *service) run() error {
@@ -365,9 +359,6 @@ func (s *service) GetServiceInfo() map[string]grpc.ServiceInfo {
 
 func (s *service) Close() error {
 	err := multierr.Combine(s.Stop())
-	if s.opts.db != nil {
-		err = multierr.Append(s.opts.db.Close(), err)
-	}
 	<-s.closed
 	return err
 }

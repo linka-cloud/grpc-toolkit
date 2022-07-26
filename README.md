@@ -9,7 +9,6 @@ Principles:
 
 Features:
 - [x] simple configuration with options
-- [x] embedded gorm database with options (branch db)
 - [x] simple TLS configuration
 - [ ] TLS auth
 - [ ] client connection pool
