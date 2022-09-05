@@ -57,3 +57,7 @@ func newProxy(endpoint string) (http.Handler, error) {
 	p := httputil.NewSingleHostReverseProxy(u)
 	return p, nil
 }
+
+func DevEnv() bool {
+	return os.Getenv(EndpointEnv) != ""
+}
