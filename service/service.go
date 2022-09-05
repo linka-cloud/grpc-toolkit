@@ -145,7 +145,13 @@ func (s *service) run() error {
 		return err
 	}
 
-	lis, err := net.Listen("tcp", s.opts.address)
+	network := "tcp"
+	if strings.HasPrefix(s.opts.address, "unix://") {
+		network = "unix"
+		s.opts.address = strings.TrimPrefix(s.opts.address, "unix://")
+	}
+
+	lis, err := net.Listen(network, s.opts.address)
 	if err != nil {
 		return err
 	}

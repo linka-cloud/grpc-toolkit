@@ -43,11 +43,16 @@ func New(opts ...Option) (Client, error) {
 	if len(c.opts.streamInterceptors) > 0 {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(c.opts.streamInterceptors...)))
 	}
-	if c.opts.addr == "" {
+	switch {
+	case c.opts.addr == "":
 		c.addr = fmt.Sprintf("%s:///%s", c.opts.registry.String(), c.opts.name)
-	} else if strings.HasPrefix(c.opts.addr, "tcp://") {
+	case strings.HasPrefix(c.opts.addr, "tcp://"):
 		c.addr = strings.Replace(c.opts.addr, "tcp://", "", 1)
-	} else {
+	case strings.HasPrefix(c.opts.addr, "unix:///"):
+		c.addr = c.opts.addr
+	case strings.HasPrefix(c.opts.addr, "unix://"):
+		c.addr = strings.Replace(c.opts.addr, "unix://", "unix:", 1)
+	default:
 		c.addr = c.opts.addr
 	}
 	if c.opts.version != "" && c.opts.addr == "" {
