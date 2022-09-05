@@ -24,8 +24,12 @@ import (
 	"strings"
 )
 
+const (
+	EndpointEnv = "REACT_ENDPOINT"
+)
+
 func NewHandler(dir embed.FS, subpath string) (http.Handler, error) {
-	if e := os.Getenv("REACT_ENDPOINT"); e != "" {
+	if e := os.Getenv(EndpointEnv); e != "" {
 		return newProxy(e)
 	}
 	return newStatic(dir, subpath)

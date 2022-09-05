@@ -22,11 +22,3 @@ func (i *recovery) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 func (i *recovery) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return grpc_recovery.StreamServerInterceptor(i.opts...)
 }
-
-func (i *recovery) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	panic("not implemented")
-}
-
-func (i *recovery) StreamClientInterceptor() grpc.StreamClientInterceptor {
-	panic("not implemented")
-}
