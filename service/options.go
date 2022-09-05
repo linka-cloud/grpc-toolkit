@@ -127,6 +127,15 @@ func WithAddress(addr string) Option {
 	}
 }
 
+// WithListener specifies a listener for the service.
+// It can be used to specify a custom listener.
+// This will override the WithAddress and WithTLSConfig options
+func WithListener(lis net.Listener) Option {
+	return func(o *options) {
+		o.lis = lis
+	}
+}
+
 func WithReflection(r bool) Option {
 	return func(o *options) {
 		o.reflection = r
@@ -330,6 +339,7 @@ type options struct {
 	name    string
 	version string
 	address string
+	lis     net.Listener
 
 	reflection bool
 	health     bool

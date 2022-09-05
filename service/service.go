@@ -151,17 +151,21 @@ func (s *service) run() error {
 		s.opts.address = strings.TrimPrefix(s.opts.address, "unix://")
 	}
 
-	lis, err := net.Listen(network, s.opts.address)
-	if err != nil {
-		return err
-	}
-	if s.opts.tlsConfig != nil {
-		lis = tls.NewListener(lis, s.opts.tlsConfig)
+	if s.opts.lis == nil {
+		lis, err := net.Listen(network, s.opts.address)
+		if err != nil {
+			return err
+		}
+		if s.opts.tlsConfig != nil {
+			lis = tls.NewListener(lis, s.opts.tlsConfig)
+		}
+		s.opts.lis = lis
+		s.opts.address = lis.Addr().String()
+	} else {
+		s.opts.address = s.opts.lis.Addr().String()
 	}
 
-	s.opts.address = lis.Addr().String()
-
-	mux := cmux.New(lis)
+	mux := cmux.New(s.opts.lis)
 	mux.SetReadTimeout(5 * time.Second)
 
 	gLis := mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
