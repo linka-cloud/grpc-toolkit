@@ -1,6 +1,8 @@
 package interceptors
 
 import (
+	"context"
+
 	"google.golang.org/grpc"
 )
 
@@ -17,4 +19,17 @@ type ClientInterceptors interface {
 type Interceptors interface {
 	ServerInterceptors
 	ClientInterceptors
+}
+
+func NewContextServerStream(ctx context.Context, ss grpc.ServerStream) grpc.ServerStream {
+	return &ContextWrapper{ServerStream: ss, ctx: ctx}
+}
+
+type ContextWrapper struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *ContextWrapper) Context() context.Context {
+	return w.ctx
 }

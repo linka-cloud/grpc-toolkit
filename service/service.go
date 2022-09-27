@@ -56,6 +56,8 @@ type service struct {
 	inproc   *inprocgrpc.Channel
 	services map[string]*serviceInfo
 
+	healthServer *health.Server
+
 	id     string
 	regSvc *registry.Service
 	closed chan struct{}
@@ -120,7 +122,8 @@ func newService(opts ...Option) (*service, error) {
 		greflect.Register(s.server)
 	}
 	if s.opts.health {
-		s.registerService(&grpc_health_v1.Health_ServiceDesc, health.NewServer())
+		s.healthServer = health.NewServer()
+		s.registerService(&grpc_health_v1.Health_ServiceDesc, s.healthServer)
 	}
 	if err := s.gateway(s.opts.gatewayOpts...); err != nil {
 		return nil, err
@@ -226,6 +229,18 @@ func (s *service) run() error {
 		}
 		errs <- nil
 	}()
+	if s.healthServer != nil {
+		for k := range s.services {
+			s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_SERVING)
+		}
+		defer func() {
+			if s.healthServer != nil {
+				for k := range s.services {
+					s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+				}
+			}
+		}()
+	}
 	for i := range s.opts.afterStart {
 		if err := s.opts.afterStart[i](); err != nil {
 			s.mu.Unlock()

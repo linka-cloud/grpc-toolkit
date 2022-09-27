@@ -35,19 +35,6 @@ func (f *forward) StreamServerInterceptor() grpc.StreamServerInterceptor {
 		if md2, ok := metadata.FromOutgoingContext(ctx); ok {
 			o = metadata.Join(o, md2.Copy())
 		}
-		return handler(srv, NewContextServerStream(metadata.NewOutgoingContext(ctx, o), ss))
+		return handler(srv, interceptors.NewContextServerStream(metadata.NewOutgoingContext(ctx, o), ss))
 	}
-}
-
-func NewContextServerStream(ctx context.Context, ss grpc.ServerStream) grpc.ServerStream {
-	return &ContextWrapper{ServerStream: ss, ctx: ctx}
-}
-
-type ContextWrapper struct {
-	grpc.ServerStream
-	ctx context.Context
-}
-
-func (w *ContextWrapper) Context() context.Context {
-	return w.ctx
 }

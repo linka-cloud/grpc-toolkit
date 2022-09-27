@@ -22,6 +22,7 @@ import (
 
 	"go.linka.cloud/grpc/client"
 	"go.linka.cloud/grpc/interceptors/auth"
+	"go.linka.cloud/grpc/interceptors/ban"
 	"go.linka.cloud/grpc/interceptors/defaulter"
 	"go.linka.cloud/grpc/interceptors/iface"
 	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
@@ -137,6 +138,7 @@ func run(opts ...service.Option) {
 		service.WithMiddlewares(httpLogger),
 		service.WithInterceptors(metrics),
 		service.WithServerInterceptors(
+			ban.NewInterceptors(),
 			auth.NewServerInterceptors(auth.WithBasicValidators(func(ctx context.Context, user, password string) (context.Context, error) {
 				if !auth.Equals(user, "admin") || !auth.Equals(password, "admin") {
 					return ctx, fmt.Errorf("invalid user or password")
@@ -167,7 +169,7 @@ func run(opts ...service.Option) {
 		}
 	}()
 	<-ready
-	s, err := client.New(
+	copts := []client.Option{
 		// client.WithName(name),
 		// client.WithVersion(version),
 		client.WithAddress("localhost:9991"),
@@ -177,14 +179,28 @@ func run(opts ...service.Option) {
 			logger.From(ctx).WithFields("party", "client", "method", method).Info(req)
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}),
-		client.WithInterceptors(auth.NewBasicAuthClientIntereptors("admin", "admin")),
-	)
+	}
+	s, err := client.New(copts...)
 	if err != nil {
 		log.Fatal(err)
 	}
 	g := NewGreeterClient(s)
 	h := grpc_health_v1.NewHealthClient(s)
-	hres, err := h.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
+	for i := 0; i < 4; i++ {
+		_, err := h.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Fatalf("expected error")
+		}
+	}
+	s, err = client.New(append(copts, client.WithInterceptors(auth.NewBasicAuthClientIntereptors("admin", "admin")))...)
+	if err != nil {
+		log.Fatal(err)
+	}
+	g = NewGreeterClient(s)
+	h = grpc_health_v1.NewHealthClient(s)
+	hres, err := h.Check(ctx, &grpc_health_v1.HealthCheckRequest{Service: "helloworld.Greeter"})
 	if err != nil {
 		log.Fatal(err)
 	}

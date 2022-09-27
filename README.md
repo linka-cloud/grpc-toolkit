@@ -23,7 +23,7 @@ Features:
     - [ ] context logger
     - [x] sentry
     - [ ] rate-limiting
-    - [ ] ban
+    - [x] ban
     - [ ] auth claim in context
     - [x] recovery (server side only)
     - [x] tracing (open-tracing)

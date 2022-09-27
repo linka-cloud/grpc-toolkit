@@ -9,6 +9,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 
 	"go.linka.cloud/grpc/registry/noop"
@@ -34,8 +35,8 @@ func New(opts ...Option) (Client, error) {
 	if c.opts.tlsConfig != nil {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(c.opts.tlsConfig)))
 	}
-	if !c.opts.secure {
-		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithInsecure())
+	if !c.opts.secure && c.opts.tlsConfig == nil {
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	if len(c.opts.unaryInterceptors) > 0 {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(c.opts.unaryInterceptors...)))
