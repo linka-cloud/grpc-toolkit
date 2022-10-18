@@ -64,6 +64,7 @@ type Logger interface {
 
 	Logr() logr.Logger
 	FieldLogger() logrus.FieldLogger
+	Logger() *logrus.Logger
 }
 
 type logger struct {
@@ -167,25 +168,12 @@ func (l *logger) Panicln(args ...interface{}) {
 }
 
 func (l *logger) WriterLevel(level logrus.Level) *io.PipeWriter {
-	switch t := l.fl.(type) {
-	case *logrus.Logger:
-		return t.WriterLevel(level)
-	case *logrus.Entry:
-		return t.WriterLevel(level)
-	}
-	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
+	return l.Logger().WriterLevel(level)
 }
 
 func (l *logger) SetLevel(level logrus.Level) Logger {
-	switch t := l.fl.(type) {
-	case *logrus.Logger:
-		t.SetLevel(level)
-		return l
-	case *logrus.Entry:
-		t.Logger.SetLevel(level)
-		return l
-	}
-	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
+	l.Logger().SetLevel(level)
+	return l
 }
 
 func (l *logger) WithField(key string, value interface{}) Logger {
@@ -212,14 +200,17 @@ func (l *logger) FieldLogger() logrus.FieldLogger {
 	return l.fl
 }
 
-func (l *logger) SetOutput(w io.Writer) Logger {
+func (l *logger) Logger() *logrus.Logger {
 	switch t := l.fl.(type) {
 	case *logrus.Logger:
-		t.SetOutput(w)
-		return l
+		return t
 	case *logrus.Entry:
-		t.Logger.SetOutput(w)
-		return l
+		return t.Logger
 	}
 	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
+}
+
+func (l *logger) SetOutput(w io.Writer) Logger {
+	l.Logger().SetOutput(w)
+	return l
 }
