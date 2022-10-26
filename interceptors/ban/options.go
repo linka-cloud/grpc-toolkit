@@ -2,6 +2,7 @@ package ban
 
 import (
 	"context"
+	"net"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -45,6 +46,9 @@ func DefaultActorFunc(ctx context.Context) (string, bool, error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok {
 		return "", false, nil
+	}
+	if host, _, err := net.SplitHostPort(p.Addr.String()); err == nil {
+		return host, true, nil
 	}
 	return p.Addr.String(), true, nil
 }
