@@ -13,7 +13,7 @@ import (
 	"go.linka.cloud/grpc/errors"
 )
 
-func TestNotProtectededOnly(t *testing.T) {
+func TestNotProtectedOnly(t *testing.T) {
 	assert := assert2.New(t)
 	i := &interceptor{o: options{ignoredMethods: []string{"/test.Service/ignored"}}}
 	assert.False(i.isNotProtected("/test.Service/protected"))
@@ -99,14 +99,14 @@ func TestChainedAuthFuncs(t *testing.T) {
 			name: "empty bearer",
 			auth: "bearer  ",
 			err:  true,
-			code: codes.PermissionDenied,
+			code: codes.Unauthenticated,
 		},
 		{
 			name:          "internal error",
 			auth:          "bearer internal",
 			internalError: true,
 			err:           true,
-			code:          codes.PermissionDenied,
+			code:          codes.Internal,
 		},
 		{
 			name: "multiple auth: first basic valid",
@@ -120,13 +120,13 @@ func TestChainedAuthFuncs(t *testing.T) {
 			name: "invalid auth: bearer",
 			auth: "bearer noop",
 			err:  true,
-			code: codes.PermissionDenied,
+			code: codes.Unauthenticated,
 		},
 		{
 			name: "invalid auth: basic",
 			auth: BasicAuth("other", "other"),
 			err:  true,
-			code: codes.PermissionDenied,
+			code: codes.Unauthenticated,
 		},
 	}
 

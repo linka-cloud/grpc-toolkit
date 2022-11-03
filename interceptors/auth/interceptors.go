@@ -8,13 +8,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.linka.cloud/grpc/interceptors"
 )
 
 func ChainedAuthFuncs(fn ...grpc_auth.AuthFunc) grpc_auth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
-		code := codes.Unauthenticated
+		spb := status.New(codes.Unauthenticated, codes.Unauthenticated.String()).Proto()
 		for _, v := range fn {
 			ctx2, err := v(ctx)
 			if err == nil {
@@ -24,11 +25,14 @@ func ChainedAuthFuncs(fn ...grpc_auth.AuthFunc) grpc_auth.AuthFunc {
 			if !ok {
 				return ctx2, err
 			}
-			if s.Code() == codes.PermissionDenied {
-				code = codes.PermissionDenied
+			if spb.Code != s.Proto().Code {
+				spb.Code = s.Proto().Code
 			}
+			d, _ := anypb.New(s.Proto())
+			spb.Details = append(spb.Details, d)
+			spb.Message += ", " + s.Proto().Message
 		}
-		return ctx, status.Error(code, code.String())
+		return ctx, status.FromProto(spb).Err()
 	}
 }
 
