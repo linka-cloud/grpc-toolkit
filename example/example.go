@@ -110,7 +110,7 @@ func run(opts ...service.Option) {
 	ready := make(chan struct{})
 	var svc service.Service
 	var err error
-	metrics := metrics2.NewInterceptors()
+	metrics := metrics2.DefaultInterceptors()
 	validation := validation2.NewInterceptors(true)
 	defaulter := defaulter.NewInterceptors()
 	address := "0.0.0.0:9991"
@@ -156,6 +156,7 @@ func run(opts ...service.Option) {
 		panic(err)
 	}
 	RegisterGreeterServer(svc, &GreeterHandler{})
+	metrics.EnableHandlingTimeHistogram()
 	metrics.Register(svc)
 	go func() {
 		if err := svc.Start(); err != nil {

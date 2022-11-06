@@ -23,6 +23,10 @@ type ServerInterceptors interface {
 	interceptors.ServerInterceptors
 	prometheus.Collector
 	EnableHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption)
+
+	EnableClientHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption)
+	EnableClientStreamReceiveTimeHistogram(opts ...grpc_prometheus.HistogramOption)
+	EnableClientStreamSendTimeHistogram(opts ...grpc_prometheus.HistogramOption)
 }
 
 type ClientInterceptors interface {
@@ -36,7 +40,41 @@ type metrics struct {
 
 func (m *metrics) EnableHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
 	if m.s != nil {
-		m.s.EnableHandlingTimeHistogram(opts...)
+		if m.s == grpc_prometheus.DefaultServerMetrics {
+			grpc_prometheus.EnableHandlingTimeHistogram(opts...)
+		} else {
+			m.s.EnableHandlingTimeHistogram(opts...)
+		}
+	}
+}
+
+func (m *metrics) EnableClientHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
+	if m.c != nil {
+		if m.c == grpc_prometheus.DefaultClientMetrics {
+			grpc_prometheus.EnableClientHandlingTimeHistogram(opts...)
+		} else {
+			m.c.EnableClientHandlingTimeHistogram(opts...)
+		}
+	}
+}
+
+func (m *metrics) EnableClientStreamReceiveTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
+	if m.c != nil {
+		if m.c == grpc_prometheus.DefaultClientMetrics {
+			grpc_prometheus.EnableClientStreamReceiveTimeHistogram(opts...)
+		} else {
+			m.c.EnableClientStreamReceiveTimeHistogram(opts...)
+		}
+	}
+}
+
+func (m *metrics) EnableClientStreamSendTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
+	if m.c != nil {
+		if m.c == grpc_prometheus.DefaultClientMetrics {
+			grpc_prometheus.EnableClientStreamSendTimeHistogram(opts...)
+		} else {
+			m.c.EnableClientStreamSendTimeHistogram(opts...)
+		}
 	}
 }
 
