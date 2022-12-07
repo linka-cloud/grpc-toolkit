@@ -16,10 +16,12 @@ const (
 
 var (
 	defaultOptions = options{
-		cap:            1024,
-		reaperInterval: 10 * time.Minute,
-		rules:          defaultRules,
-		actorFunc:      DefaultActorFunc,
+		cap:                 1024,
+		reaperInterval:      10 * time.Minute,
+		rules:               defaultRules,
+		actorFunc:           DefaultActorFunc,
+		defaultCallback:     nil,
+		defaultJailDuration: 10 * time.Second,
 	}
 
 	defaultRules = []Rule{
@@ -28,16 +30,12 @@ var (
 			Message:     "Too many unauthorized requests",
 			Code:        codes.PermissionDenied,
 			StrikeLimit: 3,
-			ExpireBase:  time.Second * 10,
-			Sentence:    time.Second * 10,
 		},
 		{
 			Name:        Unauthenticated,
 			Message:     "Too many unauthenticated requests",
 			Code:        codes.Unauthenticated,
 			StrikeLimit: 3,
-			ExpireBase:  time.Second * 10,
-			Sentence:    time.Second * 10,
 		},
 	}
 )
@@ -79,9 +77,23 @@ func WithActorFunc(f func(context.Context) (name string, found bool, err error))
 	}
 }
 
+func WithDefaultCallback(f ActionCallback) Option {
+	return func(o *options) {
+		o.defaultCallback = f
+	}
+}
+
+func WithDefaultJailDuration(expire time.Duration) Option {
+	return func(o *options) {
+		o.defaultJailDuration = expire
+	}
+}
+
 type options struct {
-	cap            int32
-	rules          []Rule
-	reaperInterval time.Duration
-	actorFunc      func(ctx context.Context) (name string, found bool, err error)
+	cap                 int32
+	rules               []Rule
+	reaperInterval      time.Duration
+	actorFunc           func(ctx context.Context) (name string, found bool, err error)
+	defaultCallback     ActionCallback
+	defaultJailDuration time.Duration
 }

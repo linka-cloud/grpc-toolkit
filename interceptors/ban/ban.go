@@ -27,16 +27,21 @@ func NewInterceptors(opts ...Option) interceptors.ServerInterceptors {
 	rules := make(map[codes.Code]Rule)
 	for _, r := range o.rules {
 		rules[r.Code] = r
+		callback := r.Callback
+		if callback == nil {
+			callback = o.defaultCallback
+		}
+		expire := r.JailDuration
+		if expire == 0 {
+			expire = o.defaultJailDuration
+		}
 		s.AddRule(&badactor.Rule{
 			Name:        r.Name,
 			Message:     r.Message,
 			StrikeLimit: r.StrikeLimit,
-			ExpireBase:  r.ExpireBase,
-			Sentence:    r.Sentence,
-			Action: &action{
-				whenJailed:     r.WhenJailed,
-				whenTimeServed: r.WhenTimeServed,
-			},
+			ExpireBase:  expire,
+			Sentence:    expire,
+			Action:      &action{fn: callback},
 		})
 	}
 	// we ignore the error because CreateDirectors never returns an error

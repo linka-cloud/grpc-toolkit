@@ -138,7 +138,10 @@ func run(opts ...service.Option) {
 		service.WithMiddlewares(httpLogger),
 		service.WithInterceptors(metrics),
 		service.WithServerInterceptors(
-			ban.NewInterceptors(),
+			ban.NewInterceptors(ban.WithDefaultJailDuration(time.Second), ban.WithDefaultCallback(func(action ban.Action, actor string, rule *ban.Rule) error {
+				log.WithFields("action", action, "actor", actor, "rule", rule.Name).Info("ban callback")
+				return nil
+			})),
 			auth.NewServerInterceptors(auth.WithBasicValidators(func(ctx context.Context, user, password string) (context.Context, error) {
 				if !auth.Equals(user, "admin") || !auth.Equals(password, "admin") {
 					return ctx, fmt.Errorf("invalid user or password")
@@ -187,7 +190,7 @@ func run(opts ...service.Option) {
 	}
 	g := NewGreeterClient(s)
 	h := grpc_health_v1.NewHealthClient(s)
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 5; i++ {
 		_, err := h.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 		if err != nil {
 			log.Error(err)
@@ -195,6 +198,8 @@ func run(opts ...service.Option) {
 			log.Fatalf("expected error")
 		}
 	}
+	log.Infof("waiting for unban")
+	time.Sleep(time.Second)
 	s, err = client.New(append(copts, client.WithInterceptors(auth.NewBasicAuthClientIntereptors("admin", "admin")))...)
 	if err != nil {
 		log.Fatal(err)
