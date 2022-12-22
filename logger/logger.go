@@ -21,7 +21,7 @@ func New() Logger {
 	return &logger{fl: logrus.New()}
 }
 
-func FromLogrus(fl logrus.FieldLogger) Logger {
+func FromLogrus(fl logrus.Ext1FieldLogger) Logger {
 	return &logger{fl: fl}
 }
 
@@ -35,6 +35,7 @@ type Logger interface {
 
 	SetOutput(w io.Writer) Logger
 
+	Tracef(format string, args ...interface{})
 	Debugf(format string, args ...interface{})
 	Infof(format string, args ...interface{})
 	Printf(format string, args ...interface{})
@@ -44,6 +45,7 @@ type Logger interface {
 	Fatalf(format string, args ...interface{})
 	Panicf(format string, args ...interface{})
 
+	Trace(args ...interface{})
 	Debug(args ...interface{})
 	Info(args ...interface{})
 	Print(args ...interface{})
@@ -53,6 +55,7 @@ type Logger interface {
 	Fatal(args ...interface{})
 	Panic(args ...interface{})
 
+	Traceln(args ...interface{})
 	Debugln(args ...interface{})
 	Infoln(args ...interface{})
 	Println(args ...interface{})
@@ -68,7 +71,11 @@ type Logger interface {
 }
 
 type logger struct {
-	fl logrus.FieldLogger
+	fl logrus.Ext1FieldLogger
+}
+
+func (l *logger) Tracef(format string, args ...interface{}) {
+	l.fl.Tracef(format, args...)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
@@ -103,6 +110,10 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 	l.fl.Panicf(format, args...)
 }
 
+func (l *logger) Trace(args ...interface{}) {
+	l.fl.Trace(args...)
+}
+
 func (l *logger) Debug(args ...interface{}) {
 	l.fl.Debug(args...)
 }
@@ -133,6 +144,10 @@ func (l *logger) Fatal(args ...interface{}) {
 
 func (l *logger) Panic(args ...interface{}) {
 	l.fl.Panic(args...)
+}
+
+func (l *logger) Traceln(args ...interface{}) {
+	l.fl.Traceln(args...)
 }
 
 func (l *logger) Debugln(args ...interface{}) {
