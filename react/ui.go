@@ -15,7 +15,6 @@
 package react
 
 import (
-	"embed"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
@@ -28,14 +27,14 @@ const (
 	EndpointEnv = "REACT_ENDPOINT"
 )
 
-func NewHandler(dir embed.FS, subpath string) (http.Handler, error) {
+func NewHandler(dir fs.FS, subpath string) (http.Handler, error) {
 	if e := os.Getenv(EndpointEnv); e != "" {
 		return newProxy(e)
 	}
 	return newStatic(dir, subpath)
 }
 
-func newStatic(dir embed.FS, subpath string) (http.Handler, error) {
+func newStatic(dir fs.FS, subpath string) (http.Handler, error) {
 	s, err := fs.Sub(dir, subpath)
 	if err != nil {
 		return nil, err
