@@ -35,11 +35,11 @@ type resolvr struct {
 
 func (r *resolvr) run() {
 	if r.reg.String() == "noop" {
-		r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint}}})
+		r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint()}}})
 		return
 	}
 	var name, version string
-	parts := strings.Split(r.target.Endpoint, ":")
+	parts := strings.Split(r.target.Endpoint(), ":")
 	name = parts[0]
 	if len(parts) > 1 {
 		version = parts[1]
@@ -57,7 +57,7 @@ func (r *resolvr) run() {
 		}
 	}
 	r.cc.UpdateState(resolver.State{Addresses: r.addrs})
-	w, err := r.reg.Watch(registry.WatchService(r.target.Endpoint))
+	w, err := r.reg.Watch(registry.WatchService(r.target.Endpoint()))
 	if err != nil {
 		return
 	}
@@ -80,7 +80,7 @@ func (r *resolvr) run() {
 
 func (r *resolvr) ResolveNow(options resolver.ResolveNowOptions) {
 	if r.reg.String() == "noop" {
-		r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint}}})
+		r.cc.UpdateState(resolver.State{Addresses: []resolver.Address{{Addr: r.target.Endpoint()}}})
 	}
 }
 
