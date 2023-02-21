@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -26,6 +27,8 @@ func FromLogrus(fl logrus.Ext1FieldLogger) Logger {
 }
 
 type Logger interface {
+	WithContext(ctx context.Context) Logger
+
 	WithField(key string, value interface{}) Logger
 	WithFields(kv ...interface{}) Logger
 	WithError(err error) Logger
@@ -189,6 +192,16 @@ func (l *logger) WriterLevel(level logrus.Level) *io.PipeWriter {
 func (l *logger) SetLevel(level logrus.Level) Logger {
 	l.Logger().SetLevel(level)
 	return l
+}
+
+func (l *logger) WithContext(ctx context.Context) Logger {
+	switch t := l.fl.(type) {
+	case *logrus.Logger:
+		return &logger{fl: t.WithContext(ctx)}
+	case *logrus.Entry:
+		return &logger{fl: t.WithContext(ctx)}
+	}
+	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
 }
 
 func (l *logger) WithField(key string, value interface{}) Logger {
