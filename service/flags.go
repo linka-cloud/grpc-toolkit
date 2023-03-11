@@ -41,9 +41,9 @@ func NewFlagSet() (*pflag.FlagSet, Option) {
 		o.address = optAddress
 		o.secure = !optInsecure
 		o.reflection = optReflection
-		// o.caCert = optCACert
-		// o.cert = optCert
-		// o.key = optKey
+		o.caCert = optCACert
+		o.cert = optCert
+		o.key = optKey
 	}
 }
 
