@@ -4,7 +4,6 @@ package file
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -27,7 +26,7 @@ type file struct {
 }
 
 func (c *file) Read() ([]byte, error) {
-	return ioutil.ReadFile(c.path)
+	return os.ReadFile(c.path)
 }
 
 // Watch listen for config changes and send updated content to the updates channel

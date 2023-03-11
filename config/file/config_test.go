@@ -4,7 +4,6 @@ package file
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -20,7 +19,7 @@ import (
 
 func newConfigFile(t *testing.T) (config.Config, string, func()) {
 	path := filepath.Join(os.TempDir(), "config.yaml")
-	if err := ioutil.WriteFile(path, []byte("ok"), os.ModePerm); err != nil {
+	if err := os.WriteFile(path, []byte("ok"), os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
 	cleanUp := func() {
@@ -32,14 +31,14 @@ func newConfigFile(t *testing.T) (config.Config, string, func()) {
 }
 
 func newSymlinkedConfigFile(t *testing.T) (config.Config, string, string, func()) {
-	watchDir, err := ioutil.TempDir("", "")
+	watchDir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	dataDir1 := path.Join(watchDir, "data1")
 	err = os.Mkdir(dataDir1, 0o777)
 	require.Nil(t, err)
 	realConfigFile := path.Join(dataDir1, "config.yaml")
 	t.Logf("Real config file location: %s\n", realConfigFile)
-	err = ioutil.WriteFile(realConfigFile, []byte("foo: bar\n"), 0o640)
+	err = os.WriteFile(realConfigFile, []byte("foo: bar\n"), 0o640)
 	require.Nil(t, err)
 	cleanup := func() {
 		os.RemoveAll(watchDir)
@@ -64,7 +63,7 @@ func TestWatch(t *testing.T) {
 			t.Fatal(err)
 		}
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
-		err := ioutil.WriteFile(cpath, []byte("foo: baz\n"), 0o640)
+		err := os.WriteFile(cpath, []byte("foo: baz\n"), 0o640)
 		b := <-updates
 		// then the config value should have changed
 		require.Nil(t, err)
@@ -87,7 +86,7 @@ func TestWatch(t *testing.T) {
 		err := os.MkdirAll(dataDir2, 0o777)
 		require.NoError(t, err)
 		configFile2 := path.Join(dataDir2, "config.yaml")
-		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0o640)
+		err = os.WriteFile(configFile2, []byte("foo: baz\n"), 0o640)
 		require.NoError(t, err)
 		// change the symlink using the `ln -sfn` command
 		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()

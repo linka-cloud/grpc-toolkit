@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -533,7 +533,7 @@ func (o *options) parseTLSConfig() error {
 		}
 		return nil
 	}
-	caCert, err := ioutil.ReadFile(o.caCert)
+	caCert, err := os.ReadFile(o.caCert)
 	if err != nil {
 		return err
 	}
