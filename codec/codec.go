@@ -3,6 +3,8 @@ package codec
 import (
 	"fmt"
 
+	"google.golang.org/grpc/encoding"
+	_ "google.golang.org/grpc/encoding/proto"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -49,4 +51,8 @@ func (Codec) Unmarshal(data []byte, v interface{}) error {
 
 func (Codec) Name() string {
 	return Name
+}
+
+func init() {
+	encoding.RegisterCodec(Codec{})
 }
