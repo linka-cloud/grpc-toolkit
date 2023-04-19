@@ -390,7 +390,7 @@ func (s *service) Close() error {
 
 func (s *service) notify() <-chan os.Signal {
 	sigs := make(chan os.Signal, 2)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	return sigs
 }
 
