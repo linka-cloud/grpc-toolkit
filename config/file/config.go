@@ -10,8 +10,8 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"go.linka.cloud/grpc/config"
-	"go.linka.cloud/grpc/logger"
+	"go.linka.cloud/grpc-toolkit/config"
+	"go.linka.cloud/grpc-toolkit/logger"
 )
 
 func NewConfig(path string) (config.Config, error) {

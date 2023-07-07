@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"go.linka.cloud/grpc/registry"
-	"go.linka.cloud/grpc/utils/addr"
-	"go.linka.cloud/grpc/utils/backoff"
-	net2 "go.linka.cloud/grpc/utils/net"
+	"go.linka.cloud/grpc-toolkit/registry"
+	"go.linka.cloud/grpc-toolkit/utils/addr"
+	"go.linka.cloud/grpc-toolkit/utils/backoff"
+	net2 "go.linka.cloud/grpc-toolkit/utils/net"
 )
 
 func (s *service) register() error {

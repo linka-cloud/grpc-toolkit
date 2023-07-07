@@ -17,8 +17,8 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc/resolver"
 
-	"go.linka.cloud/grpc/registry"
-	resolver2 "go.linka.cloud/grpc/resolver"
+	"go.linka.cloud/grpc-toolkit/registry"
+	resolver2 "go.linka.cloud/grpc-toolkit/resolver"
 )
 
 var (

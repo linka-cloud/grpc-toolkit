@@ -4,7 +4,7 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 func NewInterceptors(opts ...grpc_recovery.Option) interceptors.ServerInterceptors {

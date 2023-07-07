@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"go.linka.cloud/grpc/errors"
+	"go.linka.cloud/grpc-toolkit/errors"
 )
 
 func TestNotProtectedOnly(t *testing.T) {

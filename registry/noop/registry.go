@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc/resolver"
 
-	"go.linka.cloud/grpc/registry"
-	resolver2 "go.linka.cloud/grpc/resolver"
+	"go.linka.cloud/grpc-toolkit/registry"
+	resolver2 "go.linka.cloud/grpc-toolkit/resolver"
 )
 
 func New() registry.Registry {

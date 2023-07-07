@@ -5,7 +5,7 @@ import (
 
 	grpc_sentry "github.com/johnbellone/grpc-middleware-sentry"
 
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 type interceptor struct {

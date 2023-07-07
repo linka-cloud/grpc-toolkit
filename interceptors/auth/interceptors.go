@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 func ChainedAuthFuncs(fn ...grpc_auth.AuthFunc) grpc_auth.AuthFunc {

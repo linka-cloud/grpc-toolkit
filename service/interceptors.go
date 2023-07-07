@@ -1,8 +1,8 @@
 package service
 
 import (
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/interceptors/metadata"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors/metadata"
 )
 
 func md(opts *options) interceptors.Interceptors {

@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 func NewForwardInterceptors() interceptors.ServerInterceptors {

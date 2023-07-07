@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/logger"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/logger"
 )
 
 type ban struct {

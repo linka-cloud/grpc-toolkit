@@ -7,7 +7,7 @@ import (
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
 
-	"go.linka.cloud/grpc/transport"
+	"go.linka.cloud/grpc-toolkit/transport"
 )
 
 var (

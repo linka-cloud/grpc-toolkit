@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"go.linka.cloud/grpc/registry"
+	"go.linka.cloud/grpc-toolkit/registry"
 )
 
 func TestRegistry(t *testing.T) {

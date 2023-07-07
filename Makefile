@@ -1,4 +1,4 @@
-MODULE = go.linka.cloud/grpc
+MODULE = go.linka.cloud/grpc-toolkit
 
 
 PROTO_BASE_PATH = $(PWD)

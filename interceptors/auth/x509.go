@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 
-	"go.linka.cloud/grpc/errors"
+	"go.linka.cloud/grpc-toolkit/errors"
 )
 
 type X509Validator func(ctx context.Context, sans []string) (context.Context, error)

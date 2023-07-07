@@ -15,11 +15,11 @@ import (
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/certs"
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/registry"
-	"go.linka.cloud/grpc/transport"
-	"go.linka.cloud/grpc/utils/addr"
+	"go.linka.cloud/grpc-toolkit/certs"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/registry"
+	"go.linka.cloud/grpc-toolkit/transport"
+	"go.linka.cloud/grpc-toolkit/utils/addr"
 )
 
 var _ Options = (*options)(nil)

@@ -1,4 +1,4 @@
-# gRPC 
+# gRPC-toolkit
 
 A utility module, largely taken from the [go-micro](https://github.com/micro/go-micro) patterns (and a good amount of code too...) 
 with pure gRPC ecosystem modules.

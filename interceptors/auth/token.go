@@ -5,8 +5,8 @@ import (
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/interceptors/metadata"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors/metadata"
 )
 
 type TokenValidator func(ctx context.Context, token string) (context.Context, error)

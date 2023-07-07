@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 func New() interceptors.Interceptors {

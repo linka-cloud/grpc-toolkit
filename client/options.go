@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/registry"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/registry"
 )
 
 type Options interface {

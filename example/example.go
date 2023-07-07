@@ -19,15 +19,15 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"go.linka.cloud/grpc/client"
-	"go.linka.cloud/grpc/interceptors/auth"
-	"go.linka.cloud/grpc/interceptors/ban"
-	"go.linka.cloud/grpc/interceptors/defaulter"
-	"go.linka.cloud/grpc/interceptors/iface"
-	metrics2 "go.linka.cloud/grpc/interceptors/metrics"
-	validation2 "go.linka.cloud/grpc/interceptors/validation"
-	"go.linka.cloud/grpc/logger"
-	"go.linka.cloud/grpc/service"
+	"go.linka.cloud/grpc-toolkit/client"
+	"go.linka.cloud/grpc-toolkit/interceptors/auth"
+	"go.linka.cloud/grpc-toolkit/interceptors/ban"
+	"go.linka.cloud/grpc-toolkit/interceptors/defaulter"
+	"go.linka.cloud/grpc-toolkit/interceptors/iface"
+	metrics2 "go.linka.cloud/grpc-toolkit/interceptors/metrics"
+	validation2 "go.linka.cloud/grpc-toolkit/interceptors/validation"
+	"go.linka.cloud/grpc-toolkit/logger"
+	"go.linka.cloud/grpc-toolkit/service"
 )
 
 var (

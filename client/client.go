@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 
-	"go.linka.cloud/grpc/registry/noop"
+	"go.linka.cloud/grpc-toolkit/registry/noop"
 )
 
 type Client interface {

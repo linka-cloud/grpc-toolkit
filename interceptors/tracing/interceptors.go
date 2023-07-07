@@ -5,7 +5,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 type tracing struct {

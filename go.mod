@@ -1,4 +1,4 @@
-module go.linka.cloud/grpc
+module go.linka.cloud/grpc-toolkit
 
 go 1.20
 

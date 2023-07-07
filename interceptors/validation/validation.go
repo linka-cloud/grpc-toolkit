@@ -6,8 +6,8 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/errors"
-	"go.linka.cloud/grpc/interceptors"
+	"go.linka.cloud/grpc-toolkit/errors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 type validatorAll interface {

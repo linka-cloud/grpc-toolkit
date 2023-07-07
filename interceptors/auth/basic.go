@@ -7,9 +7,9 @@ import (
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 
-	"go.linka.cloud/grpc/errors"
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/interceptors/metadata"
+	"go.linka.cloud/grpc-toolkit/errors"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors/metadata"
 )
 
 func BasicAuth(user, password string) string {

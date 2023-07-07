@@ -27,9 +27,9 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	greflect "google.golang.org/grpc/reflection"
 
-	"go.linka.cloud/grpc/logger"
-	"go.linka.cloud/grpc/registry"
-	"go.linka.cloud/grpc/registry/noop"
+	"go.linka.cloud/grpc-toolkit/logger"
+	"go.linka.cloud/grpc-toolkit/registry"
+	"go.linka.cloud/grpc-toolkit/registry/noop"
 )
 
 type Service interface {

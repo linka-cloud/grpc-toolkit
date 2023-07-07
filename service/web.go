@@ -6,7 +6,7 @@ import (
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 
-	"go.linka.cloud/grpc/react"
+	"go.linka.cloud/grpc-toolkit/react"
 )
 
 var defaultWebOptions = []grpcweb.Option{

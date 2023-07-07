@@ -3,7 +3,7 @@ package grpc
 import (
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/transport"
+	"go.linka.cloud/grpc-toolkit/transport"
 )
 
 var (

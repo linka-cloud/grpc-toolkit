@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"go.linka.cloud/grpc/config"
+	"go.linka.cloud/grpc-toolkit/config"
 )
 
 func newConfigFile(t *testing.T) (config.Config, string, func()) {

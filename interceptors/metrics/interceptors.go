@@ -5,8 +5,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 
-	"go.linka.cloud/grpc/interceptors"
-	"go.linka.cloud/grpc/service"
+	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/service"
 )
 
 type Registerer interface {
