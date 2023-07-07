@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"embed"
 	"fmt"
+	"io/fs"
 	"net"
 	"os"
 	"strings"
@@ -326,7 +326,7 @@ func WithGatewayOpts(opts ...runtime.ServeMuxOption) Option {
 // WithReactUI add static single page app serving to the http server
 // subpath is the path in the read-only file embed.FS to use as root to serve
 // static content
-func WithReactUI(fs embed.FS, subpath string) Option {
+func WithReactUI(fs fs.FS, subpath string) Option {
 	return func(o *options) {
 		o.reactUI = fs
 		o.reactUISubPath = subpath
@@ -375,7 +375,7 @@ type options struct {
 	gatewayOpts   []runtime.ServeMuxOption
 	cors          cors.Options
 
-	reactUI        embed.FS
+	reactUI        fs.FS
 	reactUISubPath string
 	hasReactUI     bool
 
