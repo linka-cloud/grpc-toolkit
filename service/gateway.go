@@ -22,9 +22,9 @@ func (s *service) gateway(opts ...runtime.ServeMuxOption) error {
 		return err
 	}
 	if s.opts.gatewayPrefix != "" {
-		s.opts.mux.Handle(s.opts.gatewayPrefix+"/", http.StripPrefix(s.opts.gatewayPrefix, wsproxy.WebsocketProxy(mux)))
+		s.lazyMux().Handle(s.opts.gatewayPrefix+"/", http.StripPrefix(s.opts.gatewayPrefix, wsproxy.WebsocketProxy(mux)))
 	} else {
-		s.opts.mux.Handle("/", wsproxy.WebsocketProxy(mux))
+		s.lazyMux().Handle("/", wsproxy.WebsocketProxy(mux))
 	}
 	return nil
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/multierr"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -84,9 +85,6 @@ func newService(opts ...Option) (*service, error) {
 		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{md.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
 	}
 
-	if s.opts.mux == nil {
-		s.opts.mux = http.NewServeMux()
-	}
 	if s.opts.error != nil {
 		return nil, s.opts.error
 	}
@@ -186,8 +184,6 @@ func (s *service) run() error {
 	}
 	s.running = true
 
-	errs := make(chan error, 3)
-
 	if reflect.DeepEqual(s.opts.cors, cors.Options{}) {
 		s.opts.cors = cors.Options{
 			AllowedHeaders: []string{"*"},
@@ -204,31 +200,26 @@ func (s *service) run() error {
 			AllowCredentials: true,
 		}
 	}
-	hServer := &http.Server{
-		Handler: alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
-	}
-	if s.opts.Gateway() || s.opts.grpcWeb || s.opts.hasReactUI {
-		go func() {
-			errs <- hServer.Serve(hList)
-			hServer.Shutdown(s.opts.ctx)
-		}()
-	}
-	go func() {
-		errs <- s.server.Serve(gLis)
-	}()
 
-	go func() {
-		if err := mux.Serve(); err != nil {
-			// TODO(adphi): find more elegant solution
-			if ignoreMuxError(err) {
-				errs <- nil
-				return
-			}
-			errs <- err
-			return
+	g, ctx := errgroup.WithContext(s.opts.ctx)
+	if s.opts.mux != nil {
+		hServer := &http.Server{
+			Handler: alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
 		}
-		errs <- nil
-	}()
+		g.Go(func() error {
+			defer hServer.Shutdown(ctx)
+			return hServer.Serve(hList)
+		})
+	}
+
+	g.Go(func() error {
+		return s.server.Serve(gLis)
+	})
+
+	g.Go(func() error {
+		return ignoreMuxError(mux.Serve())
+	})
+
 	if s.healthServer != nil {
 		for k := range s.services {
 			s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_SERVING)
@@ -250,13 +241,18 @@ func (s *service) run() error {
 	}
 	s.mu.Unlock()
 	sigs := s.notify()
+
+	errs := make(chan error, 1)
+	go func() {
+		errs <- g.Wait()
+	}()
 	select {
 	case sig := <-sigs:
 		fmt.Println()
 		logger.C(s.opts.ctx).Warnf("received %v", sig)
 		return s.Close()
 	case err := <-errs:
-		if err != nil && !ignoreMuxError(err) {
+		if !isMuxError(err) {
 			logger.C(s.opts.ctx).Error(err)
 			return err
 		}
@@ -394,10 +390,27 @@ func (s *service) notify() <-chan os.Signal {
 	return sigs
 }
 
-func ignoreMuxError(err error) bool {
+func (s *service) lazyMux() ServeMux {
+	if s.opts.mux == nil {
+		s.opts.mux = http.NewServeMux()
+	}
+	return s.opts.mux
+}
+
+func ignoreMuxError(err error) error {
+	if !isMuxError(err) {
+		return err
+	}
+	return nil
+}
+
+func isMuxError(err error) bool {
 	if err == nil {
+		return false
+	}
+	if strings.Contains(err.Error(), "use of closed network connection") ||
+		strings.Contains(err.Error(), "mux: server closed") {
 		return true
 	}
-	return strings.Contains(err.Error(), "use of closed network connection") ||
-		strings.Contains(err.Error(), "mux: server closed")
+	return false
 }

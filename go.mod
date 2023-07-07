@@ -36,6 +36,7 @@ require (
 	go.linka.cloud/protofilters v0.5.0
 	go.uber.org/multierr v1.7.0
 	golang.org/x/net v0.8.0
+	golang.org/x/sync v0.1.0
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
 	google.golang.org/grpc v1.53.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0

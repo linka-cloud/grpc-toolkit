@@ -28,9 +28,9 @@ func (s *service) grpcWeb(opts ...grpcweb.Option) error {
 	h := grpcweb.WrapServer(s.server, append(defaultWebOptions, opts...)...)
 	for _, v := range grpcweb.ListGRPCResources(s.server) {
 		if s.opts.grpcWebPrefix != "" {
-			s.opts.mux.Handle(s.opts.grpcWebPrefix+v, http.StripPrefix(s.opts.grpcWebPrefix, h))
+			s.lazyMux().Handle(s.opts.grpcWebPrefix+v, http.StripPrefix(s.opts.grpcWebPrefix, h))
 		} else {
-			s.opts.mux.Handle(v, h)
+			s.lazyMux().Handle(v, h)
 		}
 	}
 	return nil
@@ -44,6 +44,6 @@ func (s *service) reactApp() error {
 	if err != nil {
 		return err
 	}
-	s.opts.mux.Handle("/", h)
+	s.lazyMux().Handle("/", h)
 	return nil
 }
