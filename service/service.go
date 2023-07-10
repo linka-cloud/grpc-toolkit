@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/justinas/alice"
+	"github.com/pires/go-proxyproto"
 	"github.com/rs/cors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/multierr"
@@ -170,6 +171,34 @@ func (s *service) start() (*errgroup.Group, error) {
 		s.opts.address = lis.Addr().String()
 	} else {
 		s.opts.address = s.opts.lis.Addr().String()
+	}
+
+	if s.opts.proxyProtocol {
+		p := func(upstream net.Addr) (proxyproto.Policy, error) {
+			u, _, err := net.SplitHostPort(upstream.String())
+			if err != nil {
+				return proxyproto.REJECT, err
+			}
+			ip := net.ParseIP(u)
+			if ip == nil {
+				return proxyproto.REJECT, fmt.Errorf("proxyproto: invalid IP address")
+			}
+			if ip.IsPrivate() || ip.IsLoopback() {
+				return proxyproto.USE, nil
+			}
+			return proxyproto.REJECT, nil
+		}
+		if len(s.opts.proxyProtocolAddrs) > 0 {
+			var err error
+			p, err = proxyproto.StrictWhiteListPolicy(s.opts.proxyProtocolAddrs)
+			if err != nil {
+				return nil, err
+			}
+		}
+		s.opts.lis = &proxyproto.Listener{
+			Listener: s.opts.lis,
+			Policy:   p,
+		}
 	}
 
 	for i := range s.opts.beforeStart {

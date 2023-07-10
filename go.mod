@@ -22,6 +22,7 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/miekg/dns v1.1.41
 	github.com/opentracing/opentracing-go v1.1.0
+	github.com/pires/go-proxyproto v0.7.0
 	github.com/planetscale/vtprotobuf v0.4.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rs/cors v1.7.0
