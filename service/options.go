@@ -67,6 +67,9 @@ type Options interface {
 
 	// TODO(adphi): metrics + tracing
 
+	WithoutCmux() bool
+	ProxyProtocol() bool
+
 	Default()
 }
 
@@ -341,6 +344,13 @@ func WithoutCmux() Option {
 	}
 }
 
+func WithProxyProtocol(addrs ...string) Option {
+	return func(o *options) {
+		o.proxyProtocol = true
+		o.proxyProtocolAddrs = addrs
+	}
+}
+
 type options struct {
 	ctx     context.Context
 	name    string
@@ -386,9 +396,11 @@ type options struct {
 	reactUISubPath string
 	hasReactUI     bool
 
-	error         error
-	gatewayPrefix string
-	withoutCmux   bool
+	error              error
+	gatewayPrefix      string
+	withoutCmux        bool
+	proxyProtocol      bool
+	proxyProtocolAddrs []string
 }
 
 func (o *options) Name() string {
@@ -509,6 +521,10 @@ func (o *options) GatewayOpts() []runtime.ServeMuxOption {
 
 func (o *options) WithoutCmux() bool {
 	return o.withoutCmux
+}
+
+func (o *options) ProxyProtocol() bool {
+	return o.proxyProtocol
 }
 
 func (o *options) parseTLSConfig() error {
