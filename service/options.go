@@ -334,6 +334,13 @@ func WithReactUI(fs fs.FS, subpath string) Option {
 	}
 }
 
+// WithoutCmux disables the use of cmux for http support to instead use grpc.Server.ServeHTTP method when http support is enabled
+func WithoutCmux() Option {
+	return func(o *options) {
+		o.withoutCmux = true
+	}
+}
+
 type options struct {
 	ctx     context.Context
 	name    string
@@ -381,6 +388,7 @@ type options struct {
 
 	error         error
 	gatewayPrefix string
+	withoutCmux   bool
 }
 
 func (o *options) Name() string {
@@ -497,6 +505,10 @@ func (o *options) GatewayPrefix() string {
 
 func (o *options) GatewayOpts() []runtime.ServeMuxOption {
 	return o.gatewayOpts
+}
+
+func (o *options) WithoutCmux() bool {
+	return o.withoutCmux
 }
 
 func (o *options) parseTLSConfig() error {

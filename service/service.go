@@ -21,6 +21,8 @@ import (
 	"github.com/rs/cors"
 	"github.com/soheilhy/cmux"
 	"go.uber.org/multierr"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -166,12 +168,6 @@ func (s *service) run() error {
 		s.opts.address = s.opts.lis.Addr().String()
 	}
 
-	mux := cmux.New(s.opts.lis)
-	mux.SetReadTimeout(5 * time.Second)
-
-	gLis := mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
-	hList := mux.Match(cmux.Any())
-
 	for i := range s.opts.beforeStart {
 		if err := s.opts.beforeStart[i](); err != nil {
 			s.mu.Unlock()
@@ -201,34 +197,22 @@ func (s *service) run() error {
 		}
 	}
 
-	g, ctx := errgroup.WithContext(s.opts.ctx)
-	if s.opts.mux != nil {
-		hServer := &http.Server{
-			Handler: alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
-		}
-		g.Go(func() error {
-			defer hServer.Shutdown(ctx)
-			return hServer.Serve(hList)
-		})
+	fn := s.runWithCmux
+	if s.opts.withoutCmux {
+		fn = s.runWithoutCmux
 	}
 
-	g.Go(func() error {
-		return s.server.Serve(gLis)
-	})
-
-	g.Go(func() error {
-		return ignoreMuxError(mux.Serve())
-	})
-
+	g, ctx := errgroup.WithContext(s.opts.ctx)
+	if err := fn(ctx, g); err != nil {
+		return err
+	}
 	if s.healthServer != nil {
 		for k := range s.services {
 			s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_SERVING)
 		}
 		defer func() {
-			if s.healthServer != nil {
-				for k := range s.services {
-					s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
-				}
+			for k := range s.services {
+				s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 			}
 		}()
 	}
@@ -258,6 +242,63 @@ func (s *service) run() error {
 		}
 		return nil
 	}
+}
+
+func (s *service) runWithoutCmux(ctx context.Context, g *errgroup.Group) error {
+	if s.opts.mux != nil {
+		handler := alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux))
+		hServer := &http.Server{
+			Handler: h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
+					s.server.ServeHTTP(w, r)
+				} else {
+					handler.ServeHTTP(w, r)
+				}
+			}), &http2.Server{}),
+			TLSConfig: s.opts.tlsConfig,
+		}
+		if err := http2.ConfigureServer(hServer, &http2.Server{}); err != nil {
+			return err
+		}
+		g.Go(func() error {
+			defer hServer.Shutdown(ctx)
+			return hServer.Serve(s.opts.lis)
+		})
+	} else {
+		g.Go(func() error {
+			return s.server.Serve(s.opts.lis)
+		})
+	}
+	return nil
+}
+
+func (s *service) runWithCmux(ctx context.Context, g *errgroup.Group) error {
+	mux := cmux.New(s.opts.lis)
+	mux.SetReadTimeout(5 * time.Second)
+
+	gLis := mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+	hList := mux.Match(cmux.Any())
+
+	if s.opts.mux != nil {
+		hServer := &http.Server{
+			Handler:   alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
+			TLSConfig: s.opts.tlsConfig,
+		}
+		g.Go(func() error {
+			defer hServer.Shutdown(ctx)
+			return hServer.Serve(hList)
+		})
+	}
+
+	g.Go(func() error {
+		return s.server.Serve(gLis)
+	})
+
+	g.Go(func() error {
+		return ignoreMuxError(mux.Serve())
+	})
+
+	return nil
 }
 
 func (s *service) Start() error {
