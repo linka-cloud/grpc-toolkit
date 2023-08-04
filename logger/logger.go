@@ -99,6 +99,8 @@ type Logger interface {
 	Logr() logr.Logger
 	FieldLogger() logrus.FieldLogger
 	Logger() *logrus.Logger
+
+	Clone() Logger
 }
 
 type logger struct {
