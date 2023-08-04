@@ -61,6 +61,7 @@ type service struct {
 
 	id     string
 	regSvc *registry.Service
+	o      sync.Once
 	closed chan struct{}
 }
 
@@ -94,6 +95,7 @@ func newService(opts ...Option) (*service, error) {
 			select {
 			case <-s.opts.ctx.Done():
 				s.Stop()
+				return
 			}
 		}
 	}()
@@ -137,13 +139,14 @@ func (s *service) Options() Options {
 	return s.opts
 }
 
-func (s *service) run() error {
+func (s *service) start() (*errgroup.Group, error) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.closed = make(chan struct{})
 
 	// configure grpc web now that we are ready to go
 	if err := s.grpcWeb(s.opts.grpcWebOpts...); err != nil {
-		return err
+		return nil, err
 	}
 
 	network := "tcp"
@@ -155,7 +158,7 @@ func (s *service) run() error {
 	if s.opts.lis == nil {
 		lis, err := net.Listen(network, s.opts.address)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if s.opts.tlsConfig != nil {
 			lis = tls.NewListener(lis, s.opts.tlsConfig)
@@ -174,13 +177,12 @@ func (s *service) run() error {
 
 	for i := range s.opts.beforeStart {
 		if err := s.opts.beforeStart[i](); err != nil {
-			s.mu.Unlock()
-			return err
+			return nil, err
 		}
 	}
 
 	if err := s.register(); err != nil {
-		return err
+		return nil, err
 	}
 	s.running = true
 
@@ -234,12 +236,17 @@ func (s *service) run() error {
 	}
 	for i := range s.opts.afterStart {
 		if err := s.opts.afterStart[i](); err != nil {
-			s.mu.Unlock()
-			s.Stop()
-			return err
+			return nil, err
 		}
 	}
-	s.mu.Unlock()
+	return g, nil
+}
+
+func (s *service) run() error {
+	g, err := s.start()
+	if err != nil {
+		return err
+	}
 	sigs := s.notify()
 
 	errs := make(chan error, 1)
@@ -265,6 +272,13 @@ func (s *service) Start() error {
 }
 
 func (s *service) Stop() error {
+	var err error
+	s.o.Do(func() {
+		err = s.stop()
+	})
+	return err
+}
+func (s *service) stop() error {
 	log := logger.C(s.opts.ctx)
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -280,6 +294,8 @@ func (s *service) Stop() error {
 		log.Errorf("failed to deregister service: %v", err)
 	}
 	defer close(s.closed)
+	t := time.NewTimer(5 * time.Second)
+	defer t.Stop()
 	sigs := s.notify()
 	done := make(chan struct{})
 	go func() {
@@ -293,12 +309,18 @@ func (s *service) Stop() error {
 		s.server.GracefulStop()
 	}()
 	select {
+	case <-t.C:
+		log.Warnf("timeout waiting for server to stop")
+		s.server.Stop()
 	case sig := <-sigs:
 		fmt.Println()
 		log.Warnf("received %v", sig)
 		log.Warn("forcing shutdown")
 		s.server.Stop()
 	case <-done:
+	}
+	if err := s.opts.lis.Close(); err != nil {
+		log.Errorf("failed to close listener: %v", err)
 	}
 	s.running = false
 	s.cancel()
