@@ -4,14 +4,38 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
+	"runtime"
+	"strings"
 
-	"github.com/bombsimon/logrusr/v2"
+	"github.com/bombsimon/logrusr/v4"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	standardLogger Logger = &logger{fl: logrus.StandardLogger()}
+)
+
+const (
+	// PanicLevel level, highest level of severity. Logs and then calls panic with the
+	// message passed to Debug, Info, ...
+	PanicLevel Level = iota
+	// FatalLevel level. Logs and then calls `logger.Exit(1)`. It will exit even if the
+	// logging level is set to Panic.
+	FatalLevel
+	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
+	// Commonly used for hooks to send errors to an error tracking service.
+	ErrorLevel
+	// WarnLevel level. Non-critical entries that deserve eyes.
+	WarnLevel
+	// InfoLevel level. General operational entries about what's going on inside the
+	// application.
+	InfoLevel
+	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+	DebugLevel
+	// TraceLevel level. Designates finer-grained informational events than the Debug.
+	TraceLevel
 )
 
 func StandardLogger() Logger {
@@ -26,15 +50,19 @@ func FromLogrus(fl logrus.Ext1FieldLogger) Logger {
 	return &logger{fl: fl}
 }
 
+type Level = logrus.Level
+
 type Logger interface {
 	WithContext(ctx context.Context) Logger
+
+	WithReportCaller(b bool) Logger
 
 	WithField(key string, value interface{}) Logger
 	WithFields(kv ...interface{}) Logger
 	WithError(err error) Logger
 
-	SetLevel(level logrus.Level) Logger
-	WriterLevel(level logrus.Level) *io.PipeWriter
+	SetLevel(level Level) Logger
+	WriterLevel(level Level) *io.PipeWriter
 
 	SetOutput(w io.Writer) Logger
 
@@ -74,122 +102,123 @@ type Logger interface {
 }
 
 type logger struct {
-	fl logrus.Ext1FieldLogger
+	fl           logrus.Ext1FieldLogger
+	reportCaller bool
 }
 
 func (l *logger) Tracef(format string, args ...interface{}) {
-	l.fl.Tracef(format, args...)
+	l.withCaller().Tracef(format, args...)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
-	l.fl.Debugf(format, args...)
+	l.withCaller().Debugf(format, args...)
 }
 
 func (l *logger) Infof(format string, args ...interface{}) {
-	l.fl.Infof(format, args...)
+	l.withCaller().Infof(format, args...)
 }
 
 func (l *logger) Printf(format string, args ...interface{}) {
-	l.fl.Printf(format, args...)
+	l.withCaller().Printf(format, args...)
 }
 
 func (l *logger) Warnf(format string, args ...interface{}) {
-	l.fl.Warnf(format, args...)
+	l.withCaller().Warnf(format, args...)
 }
 
 func (l *logger) Warningf(format string, args ...interface{}) {
-	l.fl.Warningf(format, args...)
+	l.withCaller().Warningf(format, args...)
 }
 
 func (l *logger) Errorf(format string, args ...interface{}) {
-	l.fl.Errorf(format, args...)
+	l.withCaller().Errorf(format, args...)
 }
 
 func (l *logger) Fatalf(format string, args ...interface{}) {
-	l.fl.Fatalf(format, args...)
+	l.withCaller().Fatalf(format, args...)
 }
 
 func (l *logger) Panicf(format string, args ...interface{}) {
-	l.fl.Panicf(format, args...)
+	l.withCaller().Panicf(format, args...)
 }
 
 func (l *logger) Trace(args ...interface{}) {
-	l.fl.Trace(args...)
+	l.withCaller().Trace(args...)
 }
 
 func (l *logger) Debug(args ...interface{}) {
-	l.fl.Debug(args...)
+	l.withCaller().Debug(args...)
 }
 
 func (l *logger) Info(args ...interface{}) {
-	l.fl.Info(args...)
+	l.withCaller().Info(args...)
 }
 
 func (l *logger) Print(args ...interface{}) {
-	l.fl.Print(args...)
+	l.withCaller().Print(args...)
 }
 
 func (l *logger) Warn(args ...interface{}) {
-	l.fl.Warn(args...)
+	l.withCaller().Warn(args...)
 }
 
 func (l *logger) Warning(args ...interface{}) {
-	l.fl.Warning(args...)
+	l.withCaller().Warning(args...)
 }
 
 func (l *logger) Error(args ...interface{}) {
-	l.fl.Error(args...)
+	l.withCaller().Error(args...)
 }
 
 func (l *logger) Fatal(args ...interface{}) {
-	l.fl.Fatal(args...)
+	l.withCaller().Fatal(args...)
 }
 
 func (l *logger) Panic(args ...interface{}) {
-	l.fl.Panic(args...)
+	l.withCaller().Panic(args...)
 }
 
 func (l *logger) Traceln(args ...interface{}) {
-	l.fl.Traceln(args...)
+	l.withCaller().Traceln(args...)
 }
 
 func (l *logger) Debugln(args ...interface{}) {
-	l.fl.Debugln(args...)
+	l.withCaller().Debugln(args...)
 }
 
 func (l *logger) Infoln(args ...interface{}) {
-	l.fl.Infoln(args...)
+	l.withCaller().Infoln(args...)
 }
 
 func (l *logger) Println(args ...interface{}) {
-	l.fl.Println(args...)
+	l.withCaller().Println(args...)
 }
 
 func (l *logger) Warnln(args ...interface{}) {
-	l.fl.Warnln(args...)
+	l.withCaller().Warnln(args...)
 }
 
 func (l *logger) Warningln(args ...interface{}) {
-	l.fl.Warningln(args...)
+	l.withCaller().Warningln(args...)
 }
 
 func (l *logger) Errorln(args ...interface{}) {
-	l.fl.Errorln(args...)
+	l.withCaller().Errorln(args...)
 }
 
 func (l *logger) Fatalln(args ...interface{}) {
-	l.fl.Fatalln(args...)
+	l.withCaller().Fatalln(args...)
 }
 
 func (l *logger) Panicln(args ...interface{}) {
-	l.fl.Panicln(args...)
+	l.withCaller().Panicln(args...)
 }
 
-func (l *logger) WriterLevel(level logrus.Level) *io.PipeWriter {
+func (l *logger) WriterLevel(level Level) *io.PipeWriter {
 	return l.Logger().WriterLevel(level)
 }
 
-func (l *logger) SetLevel(level logrus.Level) Logger {
+func (l *logger) SetLevel(level Level) Logger {
 	l.Logger().SetLevel(level)
 	return l
 }
@@ -197,27 +226,31 @@ func (l *logger) SetLevel(level logrus.Level) Logger {
 func (l *logger) WithContext(ctx context.Context) Logger {
 	switch t := l.fl.(type) {
 	case *logrus.Logger:
-		return &logger{fl: t.WithContext(ctx)}
+		return &logger{fl: t.WithContext(ctx), reportCaller: l.reportCaller}
 	case *logrus.Entry:
-		return &logger{fl: t.WithContext(ctx)}
+		return &logger{fl: t.WithContext(ctx), reportCaller: l.reportCaller}
 	}
 	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
 }
 
 func (l *logger) WithField(key string, value interface{}) Logger {
-	return &logger{fl: l.fl.WithField(key, value)}
+	return &logger{fl: l.fl.WithField(key, value), reportCaller: l.reportCaller}
 }
 
 func (l *logger) WithFields(kv ...interface{}) Logger {
 	log := &logger{fl: l.fl}
 	for i := 0; i < len(kv); i += 2 {
-		log = &logger{fl: log.fl.WithField(fmt.Sprintf("%v", kv[i]), kv[i+1])}
+		log = &logger{fl: log.fl.WithField(fmt.Sprintf("%v", kv[i]), kv[i+1]), reportCaller: l.reportCaller}
 	}
 	return log
 }
 
 func (l *logger) WithError(err error) Logger {
-	return &logger{fl: l.fl.WithError(err)}
+	return &logger{fl: l.fl.WithError(err), reportCaller: l.reportCaller}
+}
+
+func (l *logger) WithReportCaller(b bool) Logger {
+	return &logger{fl: l.fl, reportCaller: b}
 }
 
 func (l *logger) Logr() logr.Logger {
@@ -241,4 +274,52 @@ func (l *logger) Logger() *logrus.Logger {
 func (l *logger) SetOutput(w io.Writer) Logger {
 	l.Logger().SetOutput(w)
 	return l
+}
+
+func (l *logger) Clone() Logger {
+	n := logrus.New()
+	switch t := l.fl.(type) {
+	case *logrus.Logger:
+		n.Level = t.Level
+		n.Out = t.Out
+		n.Formatter = t.Formatter
+		n.Hooks = t.Hooks
+		return &logger{fl: n, reportCaller: l.reportCaller}
+	case *logrus.Entry:
+		t = t.Dup()
+		n.Level = t.Logger.Level
+		n.Out = t.Logger.Out
+		n.Formatter = t.Logger.Formatter
+		n.Hooks = t.Logger.Hooks
+		t.Logger = n
+		return &logger{fl: t, reportCaller: l.reportCaller}
+	}
+	panic(fmt.Sprintf("unexpected logger type %T", l.fl))
+}
+
+func (l *logger) withCaller() logrus.Ext1FieldLogger {
+	if !l.reportCaller {
+		return l.fl
+	}
+	pcs := make([]uintptr, 1)
+	runtime.Callers(3, pcs)
+	f, _ := runtime.CallersFrames(pcs).Next()
+	pkg := getPackageName(f.Function)
+	return l.fl.WithField("caller", fmt.Sprintf("%s/%s:%d", pkg, filepath.Base(f.File), f.Line)).WithField("func", f.Func.Name())
+}
+
+// getPackageName reduces a fully qualified function name to the package name
+// There really ought to be a better way...
+func getPackageName(f string) string {
+	for {
+		lastPeriod := strings.LastIndex(f, ".")
+		lastSlash := strings.LastIndex(f, "/")
+		if lastPeriod > lastSlash {
+			f = f[:lastPeriod]
+		} else {
+			break
+		}
+	}
+
+	return f
 }

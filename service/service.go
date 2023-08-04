@@ -319,9 +319,6 @@ func (s *service) stop() error {
 		s.server.Stop()
 	case <-done:
 	}
-	if err := s.opts.lis.Close(); err != nil {
-		log.Errorf("failed to close listener: %v", err)
-	}
 	s.running = false
 	s.cancel()
 	for i := range s.opts.afterStop {

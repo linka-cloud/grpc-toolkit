@@ -103,7 +103,7 @@ func run(opts ...service.Option) {
 	secure := true
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	log := logger.New().WithFields("service", name)
+	log := logger.New().WithFields("service", name).WithReportCaller(true)
 	ctx = logger.Set(ctx, log)
 	done := make(chan struct{})
 	ready := make(chan struct{})

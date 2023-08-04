@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/alta/protopatch v0.5.1
-	github.com/bombsimon/logrusr/v2 v2.0.1
+	github.com/bombsimon/logrusr/v4 v4.0.0
 	github.com/caitlinelfring/go-env-default v1.1.0
 	github.com/envoyproxy/protoc-gen-validate v0.9.1
 	github.com/fsnotify/fsnotify v1.5.1
@@ -60,6 +60,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jhump/protoreflect v1.11.0 // indirect
 	github.com/klauspost/compress v1.11.7 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/lyft/protoc-gen-star v0.6.2 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
