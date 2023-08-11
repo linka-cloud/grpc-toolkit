@@ -105,7 +105,7 @@ type Logger interface {
 
 type logger struct {
 	fl           logrus.Ext1FieldLogger
-	reportCaller int
+	reportCaller *int
 }
 
 func (l *logger) Tracef(format string, args ...interface{}) {
@@ -252,17 +252,16 @@ func (l *logger) WithError(err error) Logger {
 }
 
 func (l *logger) WithReportCaller(b bool, depth ...uint) Logger {
-	var d int
-	if b {
-		if len(depth) > 0 {
-			d = int(depth[0])
-		} else {
-			d = 0
-		}
-	} else {
-		d = -1
+	if !b {
+		return &logger{fl: l.fl}
 	}
-	return &logger{fl: l.fl, reportCaller: d}
+	var d int
+	if len(depth) > 0 {
+		d = int(depth[0])
+	} else {
+		d = 0
+	}
+	return &logger{fl: l.fl, reportCaller: &d}
 }
 
 func (l *logger) Logr() logr.Logger {
@@ -310,11 +309,11 @@ func (l *logger) Clone() Logger {
 }
 
 func (l *logger) withCaller() logrus.Ext1FieldLogger {
-	if l.reportCaller == -1 {
+	if l.reportCaller == nil {
 		return l.fl
 	}
 	pcs := make([]uintptr, 1)
-	runtime.Callers(3+l.reportCaller, pcs)
+	runtime.Callers(3+*l.reportCaller, pcs)
 	f, _ := runtime.CallersFrames(pcs).Next()
 	pkg := getPackageName(f.Function)
 	return l.fl.WithField("caller", fmt.Sprintf("%s/%s:%d", pkg, filepath.Base(f.File), f.Line)).WithField("func", f.Func.Name())
