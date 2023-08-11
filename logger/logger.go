@@ -55,7 +55,7 @@ type Level = logrus.Level
 type Logger interface {
 	WithContext(ctx context.Context) Logger
 
-	WithReportCaller(b bool) Logger
+	WithReportCaller(b bool, depth ...uint) Logger
 
 	WithField(key string, value interface{}) Logger
 	WithFields(kv ...interface{}) Logger
@@ -105,7 +105,7 @@ type Logger interface {
 
 type logger struct {
 	fl           logrus.Ext1FieldLogger
-	reportCaller bool
+	reportCaller int
 }
 
 func (l *logger) Tracef(format string, args ...interface{}) {
@@ -251,8 +251,18 @@ func (l *logger) WithError(err error) Logger {
 	return &logger{fl: l.fl.WithError(err), reportCaller: l.reportCaller}
 }
 
-func (l *logger) WithReportCaller(b bool) Logger {
-	return &logger{fl: l.fl, reportCaller: b}
+func (l *logger) WithReportCaller(b bool, depth ...uint) Logger {
+	var d int
+	if b {
+		if len(depth) > 0 {
+			d = int(depth[0])
+		} else {
+			d = 0
+		}
+	} else {
+		d = -1
+	}
+	return &logger{fl: l.fl, reportCaller: d}
 }
 
 func (l *logger) Logr() logr.Logger {
@@ -300,11 +310,11 @@ func (l *logger) Clone() Logger {
 }
 
 func (l *logger) withCaller() logrus.Ext1FieldLogger {
-	if !l.reportCaller {
+	if l.reportCaller == -1 {
 		return l.fl
 	}
 	pcs := make([]uintptr, 1)
-	runtime.Callers(3, pcs)
+	runtime.Callers(3+l.reportCaller, pcs)
 	f, _ := runtime.CallersFrames(pcs).Next()
 	pkg := getPackageName(f.Function)
 	return l.fl.WithField("caller", fmt.Sprintf("%s/%s:%d", pkg, filepath.Base(f.File), f.Line)).WithField("func", f.Func.Name())
