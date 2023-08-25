@@ -37,6 +37,7 @@ type Service interface {
 
 	Options() Options
 	Start() error
+	Serve(lis net.Listener) error
 	Stop() error
 	Close() error
 }
@@ -265,6 +266,13 @@ func (s *service) run() error {
 		}
 		return nil
 	}
+}
+
+func (s *service) Serve(lis net.Listener) error {
+	s.mu.Lock()
+	s.opts.lis = lis
+	s.mu.Unlock()
+	return s.run()
 }
 
 func (s *service) Start() error {
