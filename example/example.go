@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
@@ -130,6 +132,7 @@ func run(opts ...service.Option) {
 			close(done)
 			return nil
 		}),
+		service.WithoutCmux(),
 		service.WithGateway(RegisterGreeterHandler),
 		service.WithGatewayPrefix("/rest"),
 		service.WithGRPCWeb(true),
@@ -242,14 +245,26 @@ func run(opts ...service.Option) {
 		log.Infof("received stream message: %s", m.Message)
 	}
 	scheme := "http://"
+	var (
+		tlsConfig *tls.Config
+		dial      func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error)
+	)
 	if secure {
 		scheme = "https://"
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	} else {
+		dial = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, network, addr)
+		}
 	}
 	httpc := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
+		Transport: &http2.Transport{
+			AllowHTTP:       true,
+			TLSClientConfig: tlsConfig,
+			DialTLSContext:  dial,
 		},
 	}
 	req := `{"name":"test"}`
