@@ -55,6 +55,7 @@ func TestLoad(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, got)
 			require.Equal(t, want.Certificate, got.Certificate)
+			require.Equal(t, want.PrivateKey, got.PrivateKey)
 			require.Equal(t, want.Leaf, got.Leaf)
 		}
 	})
@@ -77,6 +78,9 @@ func write(t *testing.T, dir string, cert tls.Certificate) {
 		Type:  "CERTIFICATE",
 		Bytes: cert.Certificate[0],
 	}))
+	if err := crt.Sync(); err != nil {
+		t.Fatal(err)
+	}
 	key, err := os.Create(filepath.Join(dir, "key.pem"))
 	require.NoError(t, err)
 	defer key.Close()
@@ -86,4 +90,7 @@ func write(t *testing.T, dir string, cert tls.Certificate) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: b,
 	}))
+	if err := key.Sync(); err != nil {
+		t.Fatal(err)
+	}
 }
