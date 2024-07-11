@@ -129,7 +129,7 @@ func Command(obj Runnable, c *cobra.Command) *cobra.Command {
 			if v == "" {
 				continue
 			}
-			usage += fmt.Sprintf("%s [$%s]", usage, v)
+			usage += fmt.Sprintf(" [$%s]", v)
 		}
 		defInt, err := strconv.Atoi(defValue)
 		if err != nil {
