@@ -1,6 +1,6 @@
 module go.linka.cloud/grpc-toolkit
 
-go 1.22.0
+go 1.23
 
 toolchain go1.23.2
 
@@ -15,6 +15,8 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/securecookie v1.1.2
+	github.com/gorilla/sessions v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
