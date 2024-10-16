@@ -6,13 +6,13 @@ toolchain go1.23.2
 
 require (
 	github.com/alta/protopatch v0.5.3
-	github.com/bombsimon/logrusr/v4 v4.0.0
+	github.com/bombsimon/logrusr/v4 v4.1.0
 	github.com/caitlinelfring/go-env-default v1.1.0
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/fatih/color v1.13.0
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/fullstorydev/grpchan v1.1.1
-	github.com/go-logr/logr v1.3.0
+	github.com/go-logr/logr v1.4.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -29,7 +29,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240917153116-6f2963f01587
 	github.com/prometheus/client_golang v1.20.4
 	github.com/rs/cors v1.7.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/pflag v1.0.5
@@ -72,6 +72,9 @@ require (
 	github.com/prometheus/common v0.60.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
+	github.com/thejerf/suture/v4 v4.0.5 // indirect
+	go.linka.cloud/pm v0.0.0-20241010170247-3b07e9ded7e5 // indirect
+	go.linka.cloud/pubsub v0.0.0-20220728154114-8213058139f3 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
