@@ -33,7 +33,7 @@ func Set(ctx context.Context, logger Logger) context.Context {
 func From(ctx context.Context) Logger {
 	log, ok := ctx.Value(log{}).(Logger)
 	if ok {
-		return log
+		return log.WithContext(ctx)
 	}
 	if defaultLogger != nil {
 		return defaultLogger
@@ -42,5 +42,5 @@ func From(ctx context.Context) Logger {
 	mu.Lock()
 	defer mu.Unlock()
 	defaultLogger = logr
-	return defaultLogger
+	return defaultLogger.WithContext(ctx)
 }

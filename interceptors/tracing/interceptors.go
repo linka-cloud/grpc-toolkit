@@ -1,41 +1,40 @@
 package tracing
 
 import (
-	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
-	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc-toolkit/interceptors"
 )
 
 type tracing struct {
-	opts []otgrpc.Option
+	opts []otelgrpc.Option
 }
 
-func NewInterceptors(opts ...otgrpc.Option) interceptors.Interceptors {
+func NewInterceptors(opts ...otelgrpc.Option) interceptors.Interceptors {
 	return tracing{opts: opts}
 }
 
-func NewClientInterceptors(opts ...otgrpc.Option) interceptors.ClientInterceptors {
+func NewClientInterceptors(opts ...otelgrpc.Option) interceptors.ClientInterceptors {
 	return tracing{opts: opts}
 }
 
 func (t tracing) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	return otgrpc.OpenTracingClientInterceptor(opentracing.GlobalTracer(), t.opts...)
+	return otelgrpc.UnaryClientInterceptor(t.opts...)
 }
 
 func (t tracing) StreamClientInterceptor() grpc.StreamClientInterceptor {
-	return otgrpc.OpenTracingStreamClientInterceptor(opentracing.GlobalTracer(), t.opts...)
+	return otelgrpc.StreamClientInterceptor(t.opts...)
 }
 
-func NewServerInterceptors(opts ...otgrpc.Option) interceptors.ServerInterceptors {
+func NewServerInterceptors(opts ...otelgrpc.Option) interceptors.ServerInterceptors {
 	return tracing{opts: opts}
 }
 
 func (t tracing) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return otgrpc.OpenTracingServerInterceptor(opentracing.GlobalTracer(), t.opts...)
+	return otelgrpc.UnaryServerInterceptor(t.opts...)
 }
 
 func (t tracing) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return otgrpc.OpenTracingStreamServerInterceptor(opentracing.GlobalTracer(), t.opts...)
+	return otelgrpc.StreamServerInterceptor(t.opts...)
 }

@@ -91,7 +91,6 @@ func (o *options) Default() {
 	if o.transport == nil {
 		o.transport = &grpc.Server{}
 	}
-
 }
 
 type Option func(*options)

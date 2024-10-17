@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	greflect "google.golang.org/grpc/reflection"
 
+	"go.linka.cloud/grpc-toolkit/internal/injectlogger"
 	"go.linka.cloud/grpc-toolkit/logger"
 	"go.linka.cloud/grpc-toolkit/registry"
 	"go.linka.cloud/grpc-toolkit/registry/noop"
@@ -81,19 +82,35 @@ func newService(opts ...Option) (*service, error) {
 	for _, f := range opts {
 		f(s.opts)
 	}
+	s.opts.ctx, s.cancel = context.WithCancel(s.opts.ctx)
 
 	md := md(s.opts)
 	if md != nil {
-		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{md.UnaryServerInterceptor()}, s.opts.unaryServerInterceptors...)
-		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{md.UnaryClientInterceptor()}, s.opts.unaryClientInterceptors...)
-		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{md.StreamServerInterceptor()}, s.opts.streamServerInterceptors...)
-		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{md.StreamClientInterceptor()}, s.opts.streamClientInterceptors...)
+		s.opts.unaryServerInterceptors = append([]grpc.UnaryServerInterceptor{
+			md.UnaryServerInterceptor(),
+			injectlogger.New(s.opts.ctx).UnaryServerInterceptor()},
+			s.opts.unaryServerInterceptors...,
+		)
+		s.opts.unaryClientInterceptors = append([]grpc.UnaryClientInterceptor{
+			md.UnaryClientInterceptor(),
+			injectlogger.New(s.opts.ctx).UnaryClientInterceptor()},
+			s.opts.unaryClientInterceptors...,
+		)
+		s.opts.streamServerInterceptors = append([]grpc.StreamServerInterceptor{
+			md.StreamServerInterceptor(),
+			injectlogger.New(s.opts.ctx).StreamServerInterceptor()},
+			s.opts.streamServerInterceptors...,
+		)
+		s.opts.streamClientInterceptors = append([]grpc.StreamClientInterceptor{
+			md.StreamClientInterceptor(),
+			injectlogger.New(s.opts.ctx).StreamClientInterceptor()},
+			s.opts.streamClientInterceptors...,
+		)
 	}
 
 	if s.opts.error != nil {
 		return nil, s.opts.error
 	}
-	s.opts.ctx, s.cancel = context.WithCancel(s.opts.ctx)
 	go func() {
 		for {
 			select {

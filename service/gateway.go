@@ -18,7 +18,7 @@ func (s *service) gateway(opts ...runtime.ServeMuxOption) error {
 		return nil
 	}
 	mux := runtime.NewServeMux(append(defaultGatewayOptions, opts...)...)
-	if err := s.opts.gateway(s.opts.ctx, mux, s.inproc); err != nil {
+	if err := s.opts.gateway(s.opts.ctx, mux, s.wrapCC()); err != nil {
 		return err
 	}
 	if s.opts.gatewayPrefix != "" {

@@ -1,13 +1,23 @@
 package metrics
 
 import (
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"context"
+
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc-toolkit/interceptors"
 	"go.linka.cloud/grpc-toolkit/service"
 )
+
+func DefaultExemplarFromCtx(ctx context.Context) prometheus.Labels {
+	if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
+		return prometheus.Labels{"traceID": span.TraceID().String()}
+	}
+	return nil
+}
 
 type Registerer interface {
 	Register(svc service.Service)
@@ -22,11 +32,6 @@ type ServerInterceptors interface {
 	Registerer
 	interceptors.ServerInterceptors
 	prometheus.Collector
-	EnableHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption)
-
-	EnableClientHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption)
-	EnableClientStreamReceiveTimeHistogram(opts ...grpc_prometheus.HistogramOption)
-	EnableClientStreamSendTimeHistogram(opts ...grpc_prometheus.HistogramOption)
 }
 
 type ClientInterceptors interface {
@@ -36,46 +41,7 @@ type ClientInterceptors interface {
 type metrics struct {
 	s *grpc_prometheus.ServerMetrics
 	c *grpc_prometheus.ClientMetrics
-}
-
-func (m *metrics) EnableHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
-	if m.s != nil {
-		if m.s == grpc_prometheus.DefaultServerMetrics {
-			grpc_prometheus.EnableHandlingTimeHistogram(opts...)
-		} else {
-			m.s.EnableHandlingTimeHistogram(opts...)
-		}
-	}
-}
-
-func (m *metrics) EnableClientHandlingTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
-	if m.c != nil {
-		if m.c == grpc_prometheus.DefaultClientMetrics {
-			grpc_prometheus.EnableClientHandlingTimeHistogram(opts...)
-		} else {
-			m.c.EnableClientHandlingTimeHistogram(opts...)
-		}
-	}
-}
-
-func (m *metrics) EnableClientStreamReceiveTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
-	if m.c != nil {
-		if m.c == grpc_prometheus.DefaultClientMetrics {
-			grpc_prometheus.EnableClientStreamReceiveTimeHistogram(opts...)
-		} else {
-			m.c.EnableClientStreamReceiveTimeHistogram(opts...)
-		}
-	}
-}
-
-func (m *metrics) EnableClientStreamSendTimeHistogram(opts ...grpc_prometheus.HistogramOption) {
-	if m.c != nil {
-		if m.c == grpc_prometheus.DefaultClientMetrics {
-			grpc_prometheus.EnableClientStreamSendTimeHistogram(opts...)
-		} else {
-			m.c.EnableClientStreamSendTimeHistogram(opts...)
-		}
-	}
+	o *options
 }
 
 func (m *metrics) Describe(descs chan<- *prometheus.Desc) {
@@ -96,36 +62,45 @@ func (m *metrics) Register(svc service.Service) {
 	}
 }
 
-func NewInterceptors(opts ...grpc_prometheus.CounterOption) Interceptors {
-	s := grpc_prometheus.NewServerMetrics(opts...)
-	c := grpc_prometheus.NewClientMetrics(opts...)
-	return &metrics{s: s, c: c}
+func NewInterceptors(opts ...Option) Interceptors {
+	o := (&options{}).apply(opts...)
+	s := grpc_prometheus.NewServerMetrics(
+		grpc_prometheus.WithServerCounterOptions(o.copts...),
+		grpc_prometheus.WithServerHandlingTimeHistogram(o.hopts...),
+	)
+	c := grpc_prometheus.NewClientMetrics(
+		grpc_prometheus.WithClientCounterOptions(o.copts...),
+		grpc_prometheus.WithClientHandlingTimeHistogram(o.hopts...),
+	)
+	m := &metrics{s: s, c: c, o: o}
+	o.reg.MustRegister(m)
+	return m
 }
 
-func NewServerInterceptors(opts ...grpc_prometheus.CounterOption) ServerInterceptors {
-	s := grpc_prometheus.NewServerMetrics(opts...)
-	return &metrics{s: s}
+func NewServerInterceptors(opts ...Option) ServerInterceptors {
+	o := (&options{}).apply(opts...)
+	s := grpc_prometheus.NewServerMetrics(
+		grpc_prometheus.WithServerCounterOptions(o.copts...),
+		grpc_prometheus.WithServerHandlingTimeHistogram(o.hopts...),
+	)
+	m := &metrics{s: s, o: o}
+	o.reg.MustRegister(m)
+	return m
 }
 
-func NewClientInterceptors(opts ...grpc_prometheus.CounterOption) ClientInterceptors {
-	c := grpc_prometheus.NewClientMetrics(opts...)
-	return &metrics{c: c}
-}
-
-func DefaultInterceptors() Interceptors {
-	return &metrics{s: grpc_prometheus.DefaultServerMetrics, c: grpc_prometheus.DefaultClientMetrics}
-}
-
-func DefaultServerInterceptors() ServerInterceptors {
-	return &metrics{s: grpc_prometheus.DefaultServerMetrics}
-}
-
-func DefaultClientInterceptors() ClientInterceptors {
-	return &metrics{c: grpc_prometheus.DefaultClientMetrics}
+func NewClientInterceptors(opts ...Option) ClientInterceptors {
+	o := (&options{}).apply(opts...)
+	c := grpc_prometheus.NewClientMetrics(
+		grpc_prometheus.WithClientCounterOptions(o.copts...),
+		grpc_prometheus.WithClientHandlingTimeHistogram(o.hopts...),
+	)
+	m := &metrics{c: c, o: o}
+	o.reg.MustRegister(m)
+	return m
 }
 
 func (m *metrics) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return m.s.UnaryServerInterceptor()
+	return m.s.UnaryServerInterceptor(grpc_prometheus.WithExemplarFromContext(m.o.fn))
 }
 
 func (m *metrics) StreamServerInterceptor() grpc.StreamServerInterceptor {

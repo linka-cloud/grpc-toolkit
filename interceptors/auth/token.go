@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 
 	"go.linka.cloud/grpc-toolkit/interceptors"
 	"go.linka.cloud/grpc-toolkit/interceptors/metadata"

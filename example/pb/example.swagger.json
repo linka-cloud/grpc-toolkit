@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "example/example.proto",
+    "title": "example/pb/example.proto",
     "version": "version not set"
   },
   "tags": [
@@ -88,6 +88,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
