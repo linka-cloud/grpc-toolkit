@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"github.com/rs/cors"
+	"github.com/traefik/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc-toolkit/certs"

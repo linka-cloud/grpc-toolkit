@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/traefik/grpc-web/go/grpcweb"
 
 	"go.linka.cloud/grpc-toolkit/react"
 )
