@@ -38,6 +38,9 @@ type Options interface {
 	CACert() string
 	Cert() string
 	Key() string
+	ClientCACert() string
+	ClientCert() string
+	ClientKey() string
 	TLSConfig() *tls.Config
 	Secure() bool
 
@@ -177,6 +180,24 @@ func WithCert(path string) Option {
 func WithKey(path string) Option {
 	return func(o *options) {
 		o.key = path
+	}
+}
+
+func WithClientCACert(path string) Option {
+	return func(o *options) {
+		o.clientCACert = path
+	}
+}
+
+func WithClientCert(path string) Option {
+	return func(o *options) {
+		o.clientCert = path
+	}
+}
+
+func WithClientKey(path string) Option {
+	return func(o *options) {
+		o.clientKey = path
 	}
 }
 
@@ -360,11 +381,14 @@ type options struct {
 	reflection bool
 	health     bool
 
-	secure    bool
-	caCert    string
-	cert      string
-	key       string
-	tlsConfig *tls.Config
+	secure       bool
+	caCert       string
+	cert         string
+	key          string
+	clientCACert string
+	clientCert   string
+	clientKey    string
+	tlsConfig    *tls.Config
 
 	transport transport.Transport
 	registry  registry.Registry
@@ -440,6 +464,18 @@ func (o *options) Cert() string {
 
 func (o *options) Key() string {
 	return o.key
+}
+
+func (o *options) ClientCACert() string {
+	return o.clientCACert
+}
+
+func (o *options) ClientCert() string {
+	return o.clientCert
+}
+
+func (o *options) ClientKey() string {
+	return o.clientKey
 }
 
 func (o *options) TLSConfig() *tls.Config {
@@ -577,9 +613,32 @@ func (o *options) parseTLSConfig() error {
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
 	}
+	if !o.hasClientTLSConfig() {
+		return nil
+	}
+	clientCACert, err := os.ReadFile(o.clientCACert)
+	if err != nil {
+		return err
+	}
+	clientCACertPool := x509.NewCertPool()
+	ok = clientCACertPool.AppendCertsFromPEM(clientCACert)
+	if !ok {
+		return fmt.Errorf("failed to load Client CA Cert from %s", o.clientCACert)
+	}
+	clientCert, err := tls.LoadX509KeyPair(o.clientCert, o.clientKey)
+	if err != nil {
+		return err
+	}
+	o.tlsConfig.ClientCAs = clientCACertPool
+	o.tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	o.tlsConfig.Certificates = append(o.tlsConfig.Certificates, clientCert)
 	return nil
 }
 
 func (o *options) hasTLSConfig() bool {
-	return o.caCert != "" && o.cert != "" && o.key != "" && o.tlsConfig == nil
+	return o.caCert != "" && o.cert != "" && o.tlsConfig == nil
+}
+
+func (o *options) hasClientTLSConfig() bool {
+	return o.clientCACert != "" && o.clientCert != "" && o.clientKey != ""
 }

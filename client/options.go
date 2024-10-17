@@ -2,6 +2,9 @@ package client
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"os"
 
 	"google.golang.org/grpc"
 
@@ -15,6 +18,9 @@ type Options interface {
 	Address() string
 	Secure() bool
 	Registry() registry.Registry
+	CA() string
+	Cert() string
+	Key() string
 	TLSConfig() *tls.Config
 	DialOptions() []grpc.DialOption
 	UnaryInterceptors() []grpc.UnaryClientInterceptor
@@ -44,6 +50,24 @@ func WithVersion(version string) Option {
 func WithAddress(address string) Option {
 	return func(o *options) {
 		o.addr = address
+	}
+}
+
+func WithCA(ca string) Option {
+	return func(o *options) {
+		o.caCert = ca
+	}
+}
+
+func WithCert(cert string) Option {
+	return func(o *options) {
+		o.cert = cert
+	}
+}
+
+func WithKey(key string) Option {
+	return func(o *options) {
+		o.key = key
 	}
 }
 
@@ -87,10 +111,14 @@ func WithStreamInterceptors(i ...grpc.StreamClientInterceptor) Option {
 }
 
 type options struct {
-	registry    registry.Registry
-	name        string
-	version     string
-	addr        string
+	registry registry.Registry
+	name     string
+	version  string
+	addr     string
+
+	caCert      string
+	cert        string
+	key         string
 	tlsConfig   *tls.Config
 	secure      bool
 	dialOptions []grpc.DialOption
@@ -115,6 +143,18 @@ func (o *options) Registry() registry.Registry {
 	return o.registry
 }
 
+func (o *options) CA() string {
+	return o.caCert
+}
+
+func (o *options) Cert() string {
+	return o.cert
+}
+
+func (o *options) Key() string {
+	return o.key
+}
+
 func (o *options) TLSConfig() *tls.Config {
 	return o.tlsConfig
 }
@@ -133,4 +173,39 @@ func (o *options) UnaryInterceptors() []grpc.UnaryClientInterceptor {
 
 func (o *options) StreamInterceptors() []grpc.StreamClientInterceptor {
 	return o.streamInterceptors
+}
+
+func (o *options) hasTLSConfig() bool {
+	return o.caCert != "" && o.cert != "" && o.key != "" && o.tlsConfig == nil
+}
+
+func (o *options) parseTLSConfig() error {
+	if o.tlsConfig != nil {
+		return nil
+	}
+	if !o.hasTLSConfig() {
+		if !o.secure {
+			return nil
+		}
+		o.tlsConfig = &tls.Config{InsecureSkipVerify: true}
+		return nil
+	}
+	caCert, err := os.ReadFile(o.caCert)
+	if err != nil {
+		return err
+	}
+	caCertPool := x509.NewCertPool()
+	ok := caCertPool.AppendCertsFromPEM(caCert)
+	if !ok {
+		return fmt.Errorf("failed to load CA Cert from %s", o.caCert)
+	}
+	cert, err := tls.LoadX509KeyPair(o.cert, o.key)
+	if err != nil {
+		return err
+	}
+	o.tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+	}
+	return nil
 }

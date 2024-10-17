@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	env "github.com/caitlinelfring/go-env-default"
+	"github.com/caitlinelfring/go-env-default"
 	"github.com/spf13/pflag"
 )
 
@@ -17,6 +17,10 @@ const (
 	caCert     = "ca-cert"
 	serverCert = "server-cert"
 	serverKey  = "server-key"
+
+	clientCACert = "client-ca-cert"
+	clientCert   = "client-cert"
+	clientKey    = "client-key"
 )
 
 var u = strings.ToUpper
@@ -37,6 +41,9 @@ func NewFlagSet() (*pflag.FlagSet, Option) {
 	flags.StringVar(&optCACert, caCert, "", "Path to Root CA certificate"+flagEnv(caCert))
 	flags.StringVar(&optCert, serverCert, "", "Path to Server certificate"+flagEnv(serverCert))
 	flags.StringVar(&optKey, serverKey, "", "Path to Server key"+flagEnv(serverKey))
+	flags.StringVar(&optCACert, clientCACert, "", "Path to Root CA certificate"+flagEnv(clientCACert))
+	flags.StringVar(&optCert, clientCert, "", "Path to Client certificate"+flagEnv(clientCert))
+	flags.StringVar(&optKey, clientKey, "", "Path to Client key"+flagEnv(clientKey))
 	return flags, func(o *options) {
 		o.address = optAddress
 		o.secure = !optInsecure
@@ -44,6 +51,9 @@ func NewFlagSet() (*pflag.FlagSet, Option) {
 		o.caCert = optCACert
 		o.cert = optCert
 		o.key = optKey
+		o.clientCACert = optCACert
+		o.clientCert = optCert
+		o.clientKey = optKey
 	}
 }
 

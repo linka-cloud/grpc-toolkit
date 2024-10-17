@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -28,9 +27,8 @@ func New(opts ...Option) (Client, error) {
 		c.opts.registry = noop.New()
 	}
 	resolver.Register(c.opts.registry.ResolverBuilder())
-	c.pool = newPool(DefaultPoolSize, DefaultPoolTTL, DefaultPoolMaxIdle, DefaultPoolMaxStreams)
-	if c.opts.tlsConfig == nil && c.opts.Secure() {
-		c.opts.tlsConfig = &tls.Config{InsecureSkipVerify: true}
+	if err := c.opts.parseTLSConfig(); err != nil {
+		return nil, err
 	}
 	if c.opts.tlsConfig != nil {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(c.opts.tlsConfig)))
@@ -59,27 +57,24 @@ func New(opts ...Option) (Client, error) {
 	if c.opts.version != "" && c.opts.addr == "" {
 		c.addr = c.addr + ":" + strings.TrimSpace(c.opts.version)
 	}
+	cc, err := grpc.Dial(c.addr, c.opts.dialOptions...)
+	if err != nil {
+		return nil, err
+	}
+	c.cc = cc
 	return c, nil
 }
 
 type client struct {
 	addr string
-	pool *pool
 	opts *options
+	cc   *grpc.ClientConn
 }
 
 func (c *client) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
-	pc, err := c.pool.getConn(c.addr, c.opts.dialOptions...)
-	if err != nil {
-		return err
-	}
-	return pc.Invoke(ctx, method, args, reply, opts...)
+	return c.cc.Invoke(ctx, method, args, reply, opts...)
 }
 
 func (c *client) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	pc, err := c.pool.getConn(c.addr, c.opts.dialOptions...)
-	if err != nil {
-		return nil, err
-	}
-	return pc.NewStream(ctx, desc, method, opts...)
+	return c.cc.NewStream(ctx, desc, method, opts...)
 }
