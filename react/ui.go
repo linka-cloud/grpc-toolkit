@@ -41,8 +41,13 @@ func newStatic(dir fs.FS, subpath string) (http.Handler, error) {
 	}
 	fsrv := http.FileServer(http.FS(s))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := fs.Stat(s, strings.TrimPrefix(r.URL.Path, "/")); err != nil {
-			r.URL.Path = "/"
+		p := strings.TrimPrefix(r.URL.Path, "/")
+		if _, err := fs.Stat(s, p); err != nil {
+			if _, err := fs.Stat(s, p+".html"); err == nil {
+				r.URL.Path += ".html"
+			} else {
+				r.URL.Path = "/"
+			}
 		}
 		fsrv.ServeHTTP(w, r)
 	}), nil
