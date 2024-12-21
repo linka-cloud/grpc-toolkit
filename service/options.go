@@ -566,6 +566,7 @@ func (o *options) parseTLSConfig() error {
 	if o.tlsConfig != nil {
 		return nil
 	}
+	nextProtos := []string{"h2", "h2c", "http/1.1", "acme-tls/1"}
 	if !o.hasTLSConfig() {
 		if !o.secure {
 			return nil
@@ -593,6 +594,7 @@ func (o *options) parseTLSConfig() error {
 		o.tlsConfig = &tls.Config{
 			Certificates: []tls.Certificate{cert},
 			ClientAuth:   tls.NoClientCert,
+			NextProtos:   nextProtos,
 		}
 		return nil
 	}
@@ -612,6 +614,7 @@ func (o *options) parseTLSConfig() error {
 	o.tlsConfig = &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
+		NextProtos:   nextProtos,
 	}
 	if !o.hasClientTLSConfig() {
 		return nil

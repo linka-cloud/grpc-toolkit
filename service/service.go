@@ -310,7 +310,6 @@ func (s *service) runWithoutCmux(ctx context.Context, g *errgroup.Group) error {
 					handler.ServeHTTP(w, r)
 				}
 			}), &http2.Server{}),
-			TLSConfig: s.opts.tlsConfig,
 		}
 		if err := http2.ConfigureServer(hServer, &http2.Server{}); err != nil {
 			return err
@@ -336,8 +335,7 @@ func (s *service) runWithCmux(ctx context.Context, g *errgroup.Group) error {
 
 	if s.opts.mux != nil {
 		hServer := &http.Server{
-			Handler:   alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
-			TLSConfig: s.opts.tlsConfig,
+			Handler: alice.New(s.opts.middlewares...).Then(cors.New(s.opts.cors).Handler(s.opts.mux)),
 		}
 		g.Go(func() error {
 			defer hServer.Shutdown(ctx)
