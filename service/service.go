@@ -247,7 +247,7 @@ func (s *service) start() (*errgroup.Group, error) {
 	}
 
 	fn := s.runWithCmux
-	if s.opts.withoutCmux {
+	if s.opts.withoutCmux || s.opts.mux == nil {
 		fn = s.runWithoutCmux
 	}
 
