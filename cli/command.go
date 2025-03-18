@@ -10,10 +10,10 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"go.linka.cloud/grpc-toolkit/logger"
 	"go.linka.cloud/grpc-toolkit/signals"
 )
 
@@ -77,7 +77,7 @@ func Name(obj interface{}) string {
 func Main(cmd *cobra.Command) {
 	ctx := signals.SetupSignalHandler()
 	if err := cmd.ExecuteContext(ctx); err != nil {
-		logrus.Fatal(err)
+		logger.C(ctx).Fatal(err)
 	}
 }
 
