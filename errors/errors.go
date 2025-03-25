@@ -166,7 +166,7 @@ func IsCanceled(err error) bool {
 	if err == nil {
 		return false
 	}
-	return status.Convert(err).Code() == codes.Canceled || IsCanceled(err)
+	return status.Convert(err).Code() == codes.Canceled || IsContextCanceled(err)
 }
 func IsUnknown(err error) bool {
 	if err == nil {
