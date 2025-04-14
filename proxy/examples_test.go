@@ -14,26 +14,27 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.linka.cloud/grpc-toolkit/proxy"
+	"go.linka.cloud/grpc-toolkit/service"
 )
 
 var (
 	director proxy.StreamDirector
 )
 
-func ExampleNewProxy() {
+func ExampleNew() {
 	dst, err := grpc.Dial("example.com")
 	if err != nil {
 		log.Fatalf("dialing example.org: %v", err)
 	}
-	proxy := proxy.NewProxy(dst)
+	proxy, _ := proxy.New(dst)
 	_ = proxy
 }
 
 func ExampleRegisterService() {
-	// A gRPC server with the proxying codec enabled.
-	server := grpc.NewServer()
+	// A gRPC service with the proxying codec enabled.
+	svc, _ := service.New()
 	// Register a TestService with 4 of its methods explicitly.
-	proxy.RegisterService(server, director,
+	proxy.RegisterService(svc, director,
 		"mwitkow.testproto.TestService",
 		"PingEmpty", "Ping", "PingError", "PingList")
 }

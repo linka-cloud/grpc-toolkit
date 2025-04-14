@@ -22,7 +22,7 @@ var (
 
 // RegisterService sets up a proxy handler for a particular gRPC service and method.
 // The behaviour is the same as if you were registering a handler method, e.g. from a generated pb.go file.
-func RegisterService(server *grpc.Server, director StreamDirector, serviceName string, methodNames ...string) {
+func RegisterService(server grpc.ServiceRegistrar, director StreamDirector, serviceName string, methodNames ...string) {
 	streamer := &handler{director}
 	fakeDesc := &grpc.ServiceDesc{
 		ServiceName: serviceName,
