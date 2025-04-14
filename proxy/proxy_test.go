@@ -13,6 +13,7 @@ import (
 
 	"go.linka.cloud/grpc-toolkit/proxy"
 	"go.linka.cloud/grpc-toolkit/proxy/testservice"
+	"go.linka.cloud/grpc-toolkit/service"
 )
 
 var testBackend = flag.String("test-backend", "", "Service providing TestServiceServer")
@@ -45,11 +46,10 @@ func TestLegacyBehaviour(t *testing.T) {
 		}
 
 		// Set up the proxy server and then serve from it like in step one.
-		proxySrv := grpc.NewServer(
-			//lint:ignore SA1019 regression test
-			grpc.CustomCodec(proxy.Codec()), // was previously needed for proxy to function.
-			grpc.UnknownServiceHandler(proxy.TransparentHandler(directorFn)),
-		)
+		proxySrv, err := service.New(proxy.With(directorFn))
+		if err != nil {
+			panic(err)
+		}
 		// run the proxy backend
 		go func() {
 			t.Log("Running proxySrv")
@@ -62,7 +62,7 @@ func TestLegacyBehaviour(t *testing.T) {
 		}()
 		t.Cleanup(func() {
 			t.Log("Gracefully stopping proxySrv")
-			proxySrv.GracefulStop()
+			proxySrv.Stop()
 		})
 	}()
 
@@ -106,7 +106,10 @@ func TestNewProxy(t *testing.T) {
 		t.Helper()
 
 		// First, we need to create a client connection to this backend.
-		proxySrv := proxy.NewProxy(testCC)
+		proxySrv, err := proxy.New(testCC)
+		if err != nil {
+			panic(err)
+		}
 
 		// run the proxy backend
 		go func() {
@@ -120,7 +123,7 @@ func TestNewProxy(t *testing.T) {
 		}()
 		t.Cleanup(func() {
 			t.Log("Gracefully stopping proxySrv")
-			proxySrv.GracefulStop()
+			proxySrv.Stop()
 		})
 	}()
 
@@ -156,7 +159,10 @@ func backendDialer(t *testing.T, opts ...grpc.DialOption) (*grpc.ClientConn, err
 
 	backendBc := bufconn.Listen(10)
 	// set up the backend using a "real" server over a bufconn
-	testSrv := grpc.NewServer()
+	testSrv, err := service.New()
+	if err != nil {
+		t.Fatal(err)
+	}
 	testservice.RegisterTestServiceServer(testSrv, testservice.DefaultTestServiceServer)
 
 	// run the test backend
@@ -171,7 +177,7 @@ func backendDialer(t *testing.T, opts ...grpc.DialOption) (*grpc.ClientConn, err
 	}()
 	t.Cleanup(func() {
 		t.Log("Gracefully stopping testSrv")
-		testSrv.GracefulStop()
+		testSrv.Stop()
 	})
 
 	opts = append(opts,
