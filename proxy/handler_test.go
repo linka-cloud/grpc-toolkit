@@ -216,10 +216,8 @@ func (s *ProxyHappySuite) SetupSuite() {
 		grpc.CustomCodec(proxy.Codec()),
 		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
 	)
-	// Ping handler is handled as an explicit registration and not as a TransparentHandler.
-	proxy.RegisterService(s.proxy, director,
-		"mwitkow.testproto.TestService",
-		"Ping")
+	
+	proxy.RegisterServiceDescs(s.proxy, director, pb.TestService_ServiceDesc)
 
 	// Start the serving loops.
 	s.T().Logf("starting grpc.Server at: %v", s.serverListener.Addr().String())

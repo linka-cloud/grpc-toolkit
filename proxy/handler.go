@@ -40,6 +40,35 @@ func RegisterService(server grpc.ServiceRegistrar, director StreamDirector, serv
 	server.RegisterService(fakeDesc, streamer)
 }
 
+func RegisterServiceDescs(server grpc.ServiceRegistrar, director StreamDirector, descs ...grpc.ServiceDesc) {
+	streamer := &handler{director}
+	for _, desc := range descs {
+		fakeDesc := &grpc.ServiceDesc{
+			ServiceName: desc.ServiceName,
+			HandlerType: (*interface{})(nil),
+		}
+		for _, desc := range desc.Methods {
+			streamDesc := grpc.StreamDesc{
+				StreamName:    desc.MethodName,
+				Handler:       streamer.handler,
+				ServerStreams: true,
+				ClientStreams: true,
+			}
+			fakeDesc.Streams = append(fakeDesc.Streams, streamDesc)
+		}
+		for _, desc := range desc.Streams {
+			streamDesc := grpc.StreamDesc{
+				StreamName:    desc.StreamName,
+				Handler:       streamer.handler,
+				ServerStreams: true,
+				ClientStreams: true,
+			}
+			fakeDesc.Streams = append(fakeDesc.Streams, streamDesc)
+		}
+		server.RegisterService(fakeDesc, streamer)
+	}
+}
+
 // TransparentHandler returns a handler that attempts to proxy all requests that are not registered in the server.
 // The indented use here is as a transparent proxy, where the server doesn't know about the services implemented by the
 // backends. It should be used as a `grpc.UnknownServiceHandler`.
