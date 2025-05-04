@@ -1,8 +1,7 @@
 module go.linka.cloud/grpc-toolkit
 
 go 1.22.0
-
-toolchain go1.23.2
+toolchain go1.24.1
 
 require (
 	github.com/alta/protopatch v0.5.3
@@ -40,9 +39,8 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.56.0
 	go.opentelemetry.io/otel/trace v1.31.0
 	go.uber.org/multierr v1.7.0
-	golang.org/x/net v0.30.0
-	golang.org/x/sync v0.8.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9
+	golang.org/x/net v0.38.0
+	golang.org/x/sync v0.12.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241007155032-5fefd90f89a9
 	google.golang.org/grpc v1.67.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
@@ -79,9 +77,10 @@ require (
 	go.opentelemetry.io/otel/metric v1.31.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )
