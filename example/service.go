@@ -46,7 +46,7 @@ func newService(ctx context.Context, opts ...service.Option) (service.Service, e
 			metrics,
 			logging.New(ctx, logging2.WithFieldsFromContext(func(ctx context.Context) logging2.Fields {
 				if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
-					return logging2.Fields{"traceID", span.TraceID().String()}
+					return logging2.Fields{"traceid", span.TraceID().String(), "spanid", span.SpanID().String()}
 				}
 				return nil
 			})),

@@ -265,7 +265,9 @@ func (l *logger) WithReportCaller(b bool, depth ...uint) Logger {
 }
 
 func (l *logger) Logr() logr.Logger {
-	return logrusr.New(l.fl)
+	return logrusr.New(l.fl, logrusr.WithFormatter(func(i interface{}) interface{} {
+		return fmt.Sprintf("%v", i)
+	}))
 }
 
 func (l *logger) FieldLogger() logrus.FieldLogger {

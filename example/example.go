@@ -12,14 +12,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -30,6 +23,8 @@ import (
 	"go.linka.cloud/grpc-toolkit/interceptors/auth"
 	"go.linka.cloud/grpc-toolkit/interceptors/tracing"
 	"go.linka.cloud/grpc-toolkit/logger"
+	"go.linka.cloud/grpc-toolkit/logger/otellog"
+	"go.linka.cloud/grpc-toolkit/otel"
 	"go.linka.cloud/grpc-toolkit/service"
 )
 
@@ -41,64 +36,20 @@ func run(ctx context.Context, opts ...service.Option) {
 	version := "v0.0.1"
 	secure := true
 
-	log := logger.New().WithFields("service", name).WithReportCaller(true)
-	log.Logger().AddHook(otellogrus.NewHook(otellogrus.WithLevels(
-		logger.PanicLevel,
-		logger.FatalLevel,
-		logger.ErrorLevel,
-		logger.WarnLevel,
-		logger.InfoLevel,
-	)))
+	log := otellog.Setup(ctx, name, logger.PanicLevel, logger.FatalLevel, logger.ErrorLevel, logger.WarnLevel, logger.InfoLevel).WithReportCaller(true)
 	ctx = logger.Set(ctx, log)
 	done := make(chan struct{})
 	ready := make(chan struct{})
 
-	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithInsecure(), otlptracegrpc.WithEndpoint("192.168.10.212:4317"))
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	defer exporter.Shutdown(ctx)
-
-	r, err := resource.New(
-		ctx,
-		resource.WithFromEnv(),
-		resource.WithTelemetrySDK(),
-		resource.WithHost(),
-		resource.WithSchemaURL(semconv.SchemaURL),
-		resource.WithAttributes(
-			semconv.ServiceName("example"),
-			semconv.ServiceVersion("v1.0.0"),
-			semconv.DeploymentEnvironment("tests"),
-		),
+	otel.Configure(
+		// otel.WithDSN("http://127.0.0.1:4318"),
+		otel.WithServiceName(name),
+		otel.WithServiceVersion(version),
+		otel.WithDeploymentEnvironment("tests"),
+		otel.WithTraceSampler(sdktrace.AlwaysSample()),
+		otel.WithMetricPrometheusBridge(),
 	)
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithResource(r),
-		// sdktrace.WithBatcher(exporter),
-		sdktrace.WithSyncer(exporter),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	)
-	defer func() {
-		if err := tp.Shutdown(ctx); err != nil {
-			log.Error(err)
-		}
-	}()
-
-	// exporter, err := stdout.New(stdout.WithPrettyPrint())
-	// if err != nil {
-	// 	log.WithError(err).Fatal("failed to create otel exporter")
-	// }
-	// tp := sdktrace.NewTracerProvider(
-	// 	sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	// 	// enable in production
-	// 	// sdktrace.WithBatcher(exporter),
-	// 	// enable in development
-	// 	sdktrace.WithSyncer(exporter),
-	// )
-
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	defer func() { _ = exporter.Shutdown(context.Background()) }()
+	defer otel.Shutdown(context.WithoutCancel(ctx))
 
 	address := "0.0.0.0:9991"
 
@@ -120,7 +71,7 @@ func run(ctx context.Context, opts ...service.Option) {
 			return nil
 		}),
 	)
-	svc, err = newService(ctx, opts...)
+	svc, err := newService(ctx, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -261,6 +212,7 @@ func run(ctx context.Context, opts ...service.Option) {
 	if err := readSvcs(ctx, s); err != nil {
 		log.Fatal(err)
 	}
+	time.Sleep(5 * time.Second)
 	cancel()
 	<-done
 }
