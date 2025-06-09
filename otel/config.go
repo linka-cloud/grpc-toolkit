@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+
+	"go.linka.cloud/grpc-toolkit/logger"
 )
 
 type config struct {
@@ -62,7 +64,8 @@ func newConfig(opts []Option) *config {
 	return conf
 }
 
-func (conf *config) newResource() *resource.Resource {
+func (conf *config) newResource(ctx context.Context) *resource.Resource {
+	log := logger.C(ctx)
 	if conf.resource != nil {
 		if len(conf.resourceAttributes) > 0 {
 			log.Warnf("WithResource overrides WithResourceAttributes (discarding %v)",
@@ -74,8 +77,6 @@ func (conf *config) newResource() *resource.Resource {
 		}
 		return conf.resource
 	}
-
-	ctx := context.TODO()
 
 	res, err := resource.New(ctx,
 		resource.WithFromEnv(),

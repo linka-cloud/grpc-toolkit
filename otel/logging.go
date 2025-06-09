@@ -7,11 +7,14 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/log/global"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+
+	"go.linka.cloud/grpc-toolkit/logger"
 )
 
 func configureLogging(ctx context.Context, conf *config) *sdklog.LoggerProvider {
+	log := logger.C(ctx)
 	var opts []sdklog.LoggerProviderOption
-	if res := conf.newResource(); res != nil {
+	if res := conf.newResource(ctx); res != nil {
 		opts = append(opts, sdklog.WithResource(res))
 	}
 

@@ -10,11 +10,14 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+
+	"go.linka.cloud/grpc-toolkit/logger"
 )
 
 func configureMetrics(ctx context.Context, conf *config) *sdkmetric.MeterProvider {
+	log := logger.C(ctx)
 	opts := conf.metricOptions
-	if res := conf.newResource(); res != nil {
+	if res := conf.newResource(ctx); res != nil {
 		opts = append(opts, sdkmetric.WithResource(res))
 	}
 

@@ -41,15 +41,15 @@ func run(ctx context.Context, opts ...service.Option) {
 	done := make(chan struct{})
 	ready := make(chan struct{})
 
-	otel.Configure(
-		// otel.WithDSN("http://127.0.0.1:4318"),
+	p := otel.Configure(
+		ctx,
 		otel.WithServiceName(name),
 		otel.WithServiceVersion(version),
 		otel.WithDeploymentEnvironment("tests"),
 		otel.WithTraceSampler(sdktrace.AlwaysSample()),
 		otel.WithMetricPrometheusBridge(),
 	)
-	defer otel.Shutdown(context.WithoutCancel(ctx))
+	defer p.Shutdown(ctx)
 
 	address := "0.0.0.0:9991"
 

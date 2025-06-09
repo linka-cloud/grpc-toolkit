@@ -15,6 +15,17 @@ import (
 
 const dummySpanName = "__dummy__"
 
+type Provider interface {
+	TraceURL(span trace.Span) string
+	ReportError(ctx context.Context, err error, opts ...trace.EventOption)
+	ReportPanic(ctx context.Context, val any)
+	Shutdown(ctx context.Context) error
+	ForceFlush(ctx context.Context) error
+	TracerProvider() *sdktrace.TracerProvider
+	MeterProvider() *sdkmetric.MeterProvider
+	LoggerProvider() *sdklog.LoggerProvider
+}
+
 type client struct {
 	dsn    *DSN
 	tracer trace.Tracer
@@ -32,6 +43,7 @@ func newClient(dsn *DSN) *client {
 }
 
 func (c *client) Shutdown(ctx context.Context) (lastErr error) {
+	ctx = context.WithoutCancel(ctx)
 	if c.tp != nil {
 		if err := c.tp.Shutdown(ctx); err != nil {
 			lastErr = err
@@ -97,6 +109,30 @@ func (c *client) ReportPanic(ctx context.Context, val any) {
 	if c.tp != nil {
 		_ = c.tp.ForceFlush(ctx)
 	}
+}
+
+func (c *client) TracerProvider() *sdktrace.TracerProvider {
+	if c.tp == nil {
+		return sdktrace.NewTracerProvider(
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+			sdktrace.WithIDGenerator(newIDGenerator()),
+		)
+	}
+	return c.tp
+}
+
+func (c *client) MeterProvider() *sdkmetric.MeterProvider {
+	if c.mp == nil {
+		return sdkmetric.NewMeterProvider()
+	}
+	return c.mp
+}
+
+func (c *client) LoggerProvider() *sdklog.LoggerProvider {
+	if c.lp == nil {
+		return sdklog.NewLoggerProvider()
+	}
+	return c.lp
 }
 
 func (c *client) reportPanic(ctx context.Context, val interface{}) {

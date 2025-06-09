@@ -15,15 +15,18 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
+
+	"go.linka.cloud/grpc-toolkit/logger"
 )
 
 func configureTracing(ctx context.Context, conf *config) *sdktrace.TracerProvider {
+	log := logger.C(ctx)
 	provider := conf.tracerProvider
 	if provider == nil {
 		var opts []sdktrace.TracerProviderOption
 
 		opts = append(opts, sdktrace.WithIDGenerator(newIDGenerator()))
-		if res := conf.newResource(); res != nil {
+		if res := conf.newResource(ctx); res != nil {
 			opts = append(opts, sdktrace.WithResource(res))
 		}
 		if conf.traceSampler != nil {
