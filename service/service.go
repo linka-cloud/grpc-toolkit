@@ -16,7 +16,6 @@ import (
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
 	"github.com/google/uuid"
-	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/justinas/alice"
 	"github.com/pires/go-proxyproto"
 	"github.com/rs/cors"
@@ -30,6 +29,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	greflect "google.golang.org/grpc/reflection"
 
+	"go.linka.cloud/grpc-toolkit/interceptors/chain"
 	"go.linka.cloud/grpc-toolkit/internal/injectlogger"
 	"go.linka.cloud/grpc-toolkit/logger"
 	"go.linka.cloud/grpc-toolkit/registry"
@@ -128,10 +128,10 @@ func newService(opts ...Option) (*service, error) {
 		return nil, err
 	}
 
-	ui := grpcmiddleware.ChainUnaryServer(s.opts.unaryServerInterceptors...)
+	ui := chain.UnaryServer(s.opts.unaryServerInterceptors...)
 	s.inproc = s.inproc.WithServerUnaryInterceptor(ui)
 
-	si := grpcmiddleware.ChainStreamServer(s.opts.streamServerInterceptors...)
+	si := chain.StreamServer(s.opts.streamServerInterceptors...)
 	s.inproc = s.inproc.WithServerStreamInterceptor(si)
 
 	gopts := []grpc.ServerOption{

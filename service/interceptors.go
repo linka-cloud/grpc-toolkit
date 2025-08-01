@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	insecure2 "google.golang.org/grpc/credentials/insecure"
 
 	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors/chain"
 	"go.linka.cloud/grpc-toolkit/interceptors/metadata"
 )
 
@@ -34,10 +34,10 @@ func (s *service) wrapCC() grpc.ClientConnInterface {
 	}
 	w := &client{ch: s.inproc, c: c}
 	if len(s.opts.unaryClientInterceptors) != 0 {
-		w.ui = grpc_middleware.ChainUnaryClient(s.opts.unaryClientInterceptors...)
+		w.ui = chain.UnaryClient(s.opts.unaryClientInterceptors...)
 	}
 	if len(s.opts.streamClientInterceptors) != 0 {
-		w.si = grpc_middleware.ChainStreamClient(s.opts.streamClientInterceptors...)
+		w.si = chain.StreamClient(s.opts.streamClientInterceptors...)
 	}
 	return w
 }

@@ -3,11 +3,11 @@ package logging
 import (
 	"context"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 
 	"go.linka.cloud/grpc-toolkit/interceptors"
+	"go.linka.cloud/grpc-toolkit/interceptors/chain"
 	"go.linka.cloud/grpc-toolkit/logger"
 )
 
@@ -36,7 +36,7 @@ type interceptor struct {
 }
 
 func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return grpc_middleware.ChainUnaryServer(
+	return chain.UnaryServer(
 		logging.UnaryServerInterceptor(i.log, i.opts...),
 		func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 			log := logger.C(ctx)
@@ -46,7 +46,7 @@ func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (i *interceptor) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return grpc_middleware.ChainStreamServer(
+	return chain.StreamServer(
 		logging.StreamServerInterceptor(i.log, i.opts...),
 		func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			ctx := ss.Context()
@@ -57,7 +57,7 @@ func (i *interceptor) StreamServerInterceptor() grpc.StreamServerInterceptor {
 }
 
 func (i *interceptor) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	return grpc_middleware.ChainUnaryClient(
+	return chain.UnaryClient(
 		logging.UnaryClientInterceptor(i.log, i.opts...),
 		func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			log := logger.C(ctx)
@@ -67,7 +67,7 @@ func (i *interceptor) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 }
 
 func (i *interceptor) StreamClientInterceptor() grpc.StreamClientInterceptor {
-	return grpc_middleware.ChainStreamClient(
+	return chain.StreamClient(
 		logging.StreamClientInterceptor(i.log, i.opts...),
 		func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 			log := logger.C(ctx)

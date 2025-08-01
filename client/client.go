@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 
+	"go.linka.cloud/grpc-toolkit/interceptors/chain"
 	"go.linka.cloud/grpc-toolkit/registry/noop"
 )
 
@@ -37,10 +37,10 @@ func New(opts ...Option) (Client, error) {
 		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	if len(c.opts.unaryInterceptors) > 0 {
-		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(c.opts.unaryInterceptors...)))
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithUnaryInterceptor(chain.UnaryClient(c.opts.unaryInterceptors...)))
 	}
 	if len(c.opts.streamInterceptors) > 0 {
-		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(c.opts.streamInterceptors...)))
+		c.opts.dialOptions = append(c.opts.dialOptions, grpc.WithStreamInterceptor(chain.StreamClient(c.opts.streamInterceptors...)))
 	}
 	switch {
 	case c.opts.addr == "":
