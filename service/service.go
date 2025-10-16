@@ -260,11 +260,6 @@ func (s *service) start() (*errgroup.Group, error) {
 		for k := range s.services {
 			s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_SERVING)
 		}
-		defer func() {
-			for k := range s.services {
-				s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
-			}
-		}()
 	}
 	for i := range s.opts.afterStart {
 		if err := s.opts.afterStart[i](); err != nil {
@@ -279,6 +274,14 @@ func (s *service) run() error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if s.healthServer == nil {
+			return
+		}
+		for k := range s.services {
+			s.healthServer.SetServingStatus(k, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+		}
+	}()
 	sigs := s.notify()
 
 	errs := make(chan error, 1)
