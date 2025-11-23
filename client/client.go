@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -19,7 +20,7 @@ type Client interface {
 }
 
 func New(opts ...Option) (Client, error) {
-	c := &client{opts: &options{}}
+	c := &client{opts: &options{dialOptions: []grpc.DialOption{grpc.WithContextDialer(dial)}}}
 	for _, o := range opts {
 		o(c.opts)
 	}
@@ -77,4 +78,33 @@ func (c *client) Invoke(ctx context.Context, method string, args interface{}, re
 
 func (c *client) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	return c.cc.NewStream(ctx, desc, method, opts...)
+}
+
+func parseDialTarget(target string) (string, string) {
+	net := "tcp"
+	m1 := strings.Index(target, ":")
+	m2 := strings.Index(target, ":/")
+	// handle unix:addr which will fail with url.Parse
+	if m1 >= 0 && m2 < 0 {
+		if n := target[0:m1]; n == "unix" {
+			return n, target[m1+1:]
+		}
+	}
+	if strings.HasPrefix(target, `\\.\pipe\`) {
+		net = "pipe"
+		return net, target
+	}
+	if m2 >= 0 {
+		t, err := url.Parse(target)
+		if err != nil {
+			return net, target
+		}
+		scheme := t.Scheme
+		addr := t.Host
+		if scheme == "unix" {
+			addr += t.Path
+		}
+		return scheme, addr
+	}
+	return net, target
 }

@@ -32,6 +32,7 @@ require (
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
+	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bombsimon/logrusr/v4 v4.1.0 // indirect
 	github.com/bufbuild/protocompile v0.14.1 // indirect
@@ -63,6 +64,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/tailscale/peercred v0.0.0-20250107143737-35a0c7bd7edc // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75 // indirect
 	github.com/traefik/grpc-web v0.16.0 // indirect
 	github.com/uptrace/opentelemetry-go-extra/otellogrus v0.3.2 // indirect

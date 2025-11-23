@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 
 	"go.linka.cloud/grpc-tookit/example/pb"
 	"go.linka.cloud/grpc-toolkit/interceptors/iface"
@@ -30,6 +31,11 @@ func (g *GreeterHandler) SayHello(ctx context.Context, req *pb.HelloRequest) (*p
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(attribute.String("name", req.Name))
 	logger.C(ctx).Infof("replying to %s", req.Name)
+	if p, ok := peer.FromContext(ctx); ok {
+		logger.C(ctx).Infof("peer auth info: %+v", p.AuthInfo)
+	} else {
+		logger.C(ctx).Infof("no peer info")
+	}
 	return &pb.HelloReply{Message: hello(req.Name)}, nil
 }
 

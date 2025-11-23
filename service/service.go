@@ -139,7 +139,7 @@ func newService(opts ...Option) (*service, error) {
 		grpc.StreamInterceptor(si),
 		grpc.UnaryInterceptor(ui),
 	}
-	if _, ok := s.opts.lis.(*net.UnixListener); ok || strings.HasPrefix(s.opts.address, "unix://") {
+	if _, ok := s.opts.lis.(*net.UnixListener); ok || strings.HasPrefix(s.opts.address, "unix://") || strings.HasPrefix(s.opts.address, `\\.\pipe\`) {
 		gopts = append(gopts, grpc.Creds(peercreds.New()))
 	}
 	s.server = grpc.NewServer(append(gopts, s.opts.serverOpts...)...)
@@ -179,9 +179,12 @@ func (s *service) start() (*errgroup.Group, error) {
 		network = "unix"
 		s.opts.address = strings.TrimPrefix(s.opts.address, "unix://")
 	}
+	if strings.HasPrefix(s.opts.address, `\\.\pipe\`) {
+		network = "pipe"
+	}
 
 	if s.opts.lis == nil {
-		lis, err := net.Listen(network, s.opts.address)
+		lis, err := listen(network, s.opts.address)
 		if err != nil {
 			return nil, err
 		}

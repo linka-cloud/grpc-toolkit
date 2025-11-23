@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.24.3
 
 require (
+	github.com/Microsoft/go-winio v0.6.2
 	github.com/alta/protopatch v0.5.3
 	github.com/bombsimon/logrusr/v4 v4.0.0
 	github.com/caitlinelfring/go-env-default v1.1.0
@@ -56,6 +57,7 @@ require (
 	go.uber.org/multierr v1.7.0
 	golang.org/x/net v0.40.0
 	golang.org/x/sync v0.14.0
+	golang.org/x/sys v0.33.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250519155744-55703ea1f237
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250519155744-55703ea1f237
 	google.golang.org/grpc v1.72.1
@@ -96,7 +98,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

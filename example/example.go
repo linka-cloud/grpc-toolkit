@@ -7,6 +7,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -51,7 +53,12 @@ func run(ctx context.Context, opts ...service.Option) {
 	)
 	defer p.Shutdown(ctx)
 
-	address := "0.0.0.0:9991"
+	// address := "0.0.0.0:9991"
+	address := "unix:///tmp/example.sock"
+	if runtime.GOOS == "windows" {
+		address = `\\.\pipe\example`
+	}
+	defer os.Remove("/tmp/example.sock")
 
 	var svc service.Service
 	opts = append(opts,
@@ -96,7 +103,7 @@ func run(ctx context.Context, opts ...service.Option) {
 	copts := []client.Option{
 		// client.WithName(name),
 		// client.WithVersion(version),
-		client.WithAddress("localhost:9991"),
+		client.WithAddress(address),
 		// client.WithRegistry(mdns.NewRegistry()),
 		client.WithSecure(secure),
 		client.WithInterceptors(tracing.NewClientInterceptors()),

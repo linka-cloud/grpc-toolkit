@@ -2,14 +2,35 @@ package peercreds
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net"
 
+	"github.com/soheilhy/cmux"
 	"github.com/tailscale/peercred"
 	"google.golang.org/grpc/credentials"
 )
 
+var ErrUnsupportedConnType = peercred.ErrUnsupportedConnType
+
 var _ credentials.TransportCredentials = (*peerCreds)(nil)
+
+// Creds are the peer credentials.
+type Creds struct {
+	pid int
+	uid string
+}
+
+func (c *Creds) PID() (pid int, ok bool) {
+	return c.pid, c.pid != 0
+}
+
+// UserID returns the userid (or Windows SID) that owns the other side
+// of the connection, if known. (ok is false if not known)
+// The returned string is suitable to passing to os/user.LookupId.
+func (c *Creds) UserID() (uid string, ok bool) {
+	return c.uid, c.uid != ""
+}
 
 var common = credentials.CommonAuthInfo{SecurityLevel: credentials.PrivacyAndIntegrity}
 
@@ -27,12 +48,12 @@ type peerCreds struct {
 // AuthInfo we’ll attach to the gRPC peer
 type AuthInfo struct {
 	credentials.CommonAuthInfo
-	Creds *peercred.Creds
+	Creds Creds
 }
 
 func (AuthInfo) AuthType() string { return "peercred" }
 
-func (t *peerCreds) ClientHandshake(_ context.Context, _ string, conn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+func (t *peerCreds) ClientHandshake(ctx context.Context, authority string, conn net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	return t.handshakeConn(conn)
 }
 
@@ -54,15 +75,30 @@ func (t *peerCreds) OverrideServerName(name string) error {
 }
 
 func (t *peerCreds) handshakeConn(conn net.Conn) (net.Conn, credentials.AuthInfo, error) {
-	if conn.RemoteAddr().Network() != "unix" {
-		return nil, nil, errors.New("peercred only works with unix domain sockets")
+	if conn.RemoteAddr().Network() != "unix" && conn.RemoteAddr().Network() != "pipe" {
+		return nil, nil, errors.New("peercred only works with unix domain sockets or Windows named pipes")
 	}
-	creds, err := peercred.Get(conn)
+	inner := conn
+unwrap:
+	for {
+		switch c := inner.(type) {
+		case *cmux.MuxConn:
+			inner = c.Conn
+		case *tls.Conn:
+			inner = c.NetConn()
+		default:
+			break unwrap
+		}
+	}
+	creds, err := Get(inner)
 	if err != nil {
 		if errors.Is(err, peercred.ErrNotImplemented) {
 			return nil, nil, errors.New("peercred not implemented on this OS")
 		}
 		return nil, nil, err
 	}
-	return conn, AuthInfo{Creds: creds, CommonAuthInfo: common}, nil
+	var c Creds
+	c.uid, _ = creds.UserID()
+	c.pid, _ = creds.PID()
+	return conn, AuthInfo{Creds: c, CommonAuthInfo: common}, nil
 }

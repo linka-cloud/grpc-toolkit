@@ -27,15 +27,12 @@ func newService(ctx context.Context, opts ...service.Option) (service.Service, e
 	log := logger.C(ctx)
 	metrics := metrics2.NewInterceptors(metrics2.WithExemplarFromContext(metrics2.DefaultExemplarFromCtx))
 
-	address := "0.0.0.0:9991"
-
 	var svc service.Service
 	opts = append(opts,
 		service.WithContext(ctx),
-		service.WithAddress(address),
 		// service.WithRegistry(mdns.NewRegistry()),
 		service.WithReflection(true),
-		service.WithoutCmux(),
+		// service.WithoutCmux(),
 		service.WithGateway(pb.RegisterGreeterHandler),
 		service.WithGatewayPrefix("/rest"),
 		service.WithGRPCWeb(true),
