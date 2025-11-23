@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	greflect "google.golang.org/grpc/reflection"
 
+	"go.linka.cloud/grpc-toolkit/creds/peercreds"
 	"go.linka.cloud/grpc-toolkit/interceptors/chain"
 	"go.linka.cloud/grpc-toolkit/internal/injectlogger"
 	"go.linka.cloud/grpc-toolkit/logger"
@@ -137,6 +138,9 @@ func newService(opts ...Option) (*service, error) {
 	gopts := []grpc.ServerOption{
 		grpc.StreamInterceptor(si),
 		grpc.UnaryInterceptor(ui),
+	}
+	if _, ok := s.opts.lis.(*net.UnixListener); ok || strings.HasPrefix(s.opts.address, "unix://") {
+		gopts = append(gopts, grpc.Creds(peercreds.New()))
 	}
 	s.server = grpc.NewServer(append(gopts, s.opts.serverOpts...)...)
 	if s.opts.reflection {

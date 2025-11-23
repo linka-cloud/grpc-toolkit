@@ -31,6 +31,7 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
+	github.com/tailscale/peercred v0.0.0-20250107143737-35a0c7bd7edc
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5
 	github.com/traefik/grpc-web v0.16.0
 	github.com/uptrace/opentelemetry-go-extra/otellogrus v0.3.2
