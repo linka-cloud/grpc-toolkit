@@ -18,7 +18,7 @@ func Get(conn net.Conn) (*Creds, error) {
 		return nil, ErrUnsupportedConnType
 	}
 
-	h, err := winioPipeHandle(conn)
+	h, err := pipeHandle(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +57,18 @@ func Get(conn net.Conn) (*Creds, error) {
 		uid: tu.User.Sid.String(),
 		pid: int(pid),
 	}, nil
+}
+
+
+type handle interface {
+	Handle() windows.Handle
+}
+
+func pipeHandle(conn net.Conn) (windows.Handle, error) {
+	if c, ok := conn.(handle); ok {
+		return c.Handle(), nil
+	}
+	return winioPipeHandle(conn)
 }
 
 // winioPipeHandle digs the underlying syscall HANDLE out of a go-winio
