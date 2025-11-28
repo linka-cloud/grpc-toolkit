@@ -6,13 +6,13 @@ import (
 	"context"
 	"net"
 
-	"github.com/Microsoft/go-winio"
+	"golang.zx2c4.com/wireguard/ipc/namedpipe"
 )
 
 func dial(ctx context.Context, addr string) (net.Conn, error) {
 	network, address := parseDialTarget(addr)
 	if network == "pipe" {
-		return winio.DialPipeContext(ctx, address)
+		return namedpipe.DialContext(ctx, address)
 	}
 	return (&net.Dialer{}).DialContext(ctx, network, address)
 }
