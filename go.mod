@@ -5,7 +5,6 @@ go 1.23.1
 toolchain go1.24.3
 
 require (
-	github.com/Microsoft/go-winio v0.6.2
 	github.com/alta/protopatch v0.5.3
 	github.com/bombsimon/logrusr/v4 v4.0.0
 	github.com/caitlinelfring/go-env-default v1.1.0
