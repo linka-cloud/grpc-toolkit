@@ -3,8 +3,6 @@ package logger
 import (
 	"context"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -15,7 +13,7 @@ var (
 type log struct{}
 
 func init() {
-	defaultLogger = &logger{fl: logrus.New()}
+	defaultLogger = StandardLogger()
 }
 
 var C = From
