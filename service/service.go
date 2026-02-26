@@ -302,7 +302,7 @@ func (s *service) run() error {
 		logger.C(s.opts.ctx).Warnf("received %v", sig)
 		return s.Close()
 	case err := <-errs:
-		if !isMuxError(err) {
+		if err != nil && !isMuxError(err) {
 			logger.C(s.opts.ctx).Error(err)
 			return err
 		}
