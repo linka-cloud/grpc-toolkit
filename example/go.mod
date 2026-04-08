@@ -1,6 +1,6 @@
 module go.linka.cloud/grpc-tookit/example
 
-go 1.24.0
+go 1.25.0
 
 replace go.linka.cloud/grpc-toolkit => ../
 
@@ -14,20 +14,20 @@ replace (
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240917153116-6f2963f01587
 	github.com/prometheus/client_golang v1.22.0
 	github.com/spf13/cobra v1.8.1
 	go.linka.cloud/grpc-toolkit v0.4.3
 	go.linka.cloud/protoc-gen-defaults v0.4.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.56.0
-	go.opentelemetry.io/otel v1.40.0
-	go.opentelemetry.io/otel/sdk v1.40.0
-	go.opentelemetry.io/otel/trace v1.40.0
-	golang.org/x/net v0.48.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217
-	google.golang.org/grpc v1.79.3
-	google.golang.org/protobuf v1.36.10
+	go.opentelemetry.io/otel v1.43.0
+	go.opentelemetry.io/otel/sdk v1.43.0
+	go.opentelemetry.io/otel/trace v1.43.0
+	golang.org/x/net v0.52.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9
+	google.golang.org/grpc v1.80.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -37,7 +37,7 @@ require (
 	github.com/bufbuild/protocompile v0.14.1 // indirect
 	github.com/caitlinelfring/go-env-default v1.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
-	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/desertbit/timer v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -74,20 +74,20 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.56.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.61.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.12.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.36.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.36.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.36.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.36.0 // indirect
 	go.opentelemetry.io/otel/log v0.12.2 // indirect
-	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.12.2 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.40.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20250521234502-f333402bd9cb // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	nhooyr.io/websocket v1.8.17 // indirect
 )
