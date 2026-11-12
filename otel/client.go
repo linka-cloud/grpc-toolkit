@@ -135,7 +135,7 @@ func (c *client) LoggerProvider() *sdklog.LoggerProvider {
 	return c.lp
 }
 
-func (c *client) reportPanic(ctx context.Context, val interface{}) {
+func (c *client) reportPanic(ctx context.Context, val any) {
 	span := trace.SpanFromContext(ctx)
 	if !span.IsRecording() {
 		_, span = c.tracer.Start(ctx, dummySpanName)

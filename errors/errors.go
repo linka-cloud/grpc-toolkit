@@ -71,91 +71,91 @@ func makeDetails(m ...proto.Message) []*anypb.Any {
 	return out
 }
 
-func Canceledf(msg string, args ...interface{}) error {
+func Canceledf(msg string, args ...any) error {
 	return status.Errorf(codes.Canceled, msg, args...)
 }
 func Canceledd(err error, details ...proto.Message) error {
 	return statusErr(codes.Canceled, err, details...)
 }
-func InvalidArgumentf(msg string, args ...interface{}) error {
+func InvalidArgumentf(msg string, args ...any) error {
 	return status.Errorf(codes.InvalidArgument, msg, args...)
 }
 func InvalidArgumentd(err error, details ...proto.Message) error {
 	return statusErr(codes.InvalidArgument, err, details...)
 }
-func DeadlineExceededf(msg string, args ...interface{}) error {
+func DeadlineExceededf(msg string, args ...any) error {
 	return status.Errorf(codes.DeadlineExceeded, msg, args...)
 }
 func DeadlineExceededd(err error, details ...proto.Message) error {
 	return statusErr(codes.DeadlineExceeded, err, details...)
 }
-func NotFoundf(msg string, args ...interface{}) error {
+func NotFoundf(msg string, args ...any) error {
 	return status.Errorf(codes.NotFound, msg, args...)
 }
 func NotFoundd(err error, details ...proto.Message) error {
 	return statusErr(codes.NotFound, err, details...)
 }
-func AlreadyExistsf(msg string, args ...interface{}) error {
+func AlreadyExistsf(msg string, args ...any) error {
 	return status.Errorf(codes.AlreadyExists, msg, args...)
 }
 func AlreadyExistsd(err error, details ...proto.Message) error {
 	return statusErr(codes.AlreadyExists, err, details...)
 }
-func PermissionDeniedf(msg string, args ...interface{}) error {
+func PermissionDeniedf(msg string, args ...any) error {
 	return status.Errorf(codes.PermissionDenied, msg, args...)
 }
 func PermissionDeniedd(err error, details ...proto.Message) error {
 	return statusErr(codes.PermissionDenied, err, details...)
 }
-func ResourceExhaustedf(msg string, args ...interface{}) error {
+func ResourceExhaustedf(msg string, args ...any) error {
 	return status.Errorf(codes.ResourceExhausted, msg, args...)
 }
 func ResourceExhaustedd(err error, details ...proto.Message) error {
 	return statusErr(codes.ResourceExhausted, err, details...)
 }
-func FailedPreconditionf(msg string, args ...interface{}) error {
+func FailedPreconditionf(msg string, args ...any) error {
 	return status.Errorf(codes.FailedPrecondition, msg, args...)
 }
 func FailedPreconditiond(err error, details ...proto.Message) error {
 	return statusErr(codes.FailedPrecondition, err, details...)
 }
-func Abortedf(msg string, args ...interface{}) error {
+func Abortedf(msg string, args ...any) error {
 	return status.Errorf(codes.Aborted, msg, args...)
 }
 func Abortedd(err error, details ...proto.Message) error {
 	return statusErr(codes.Aborted, err, details...)
 }
-func OutOfRangef(msg string, args ...interface{}) error {
+func OutOfRangef(msg string, args ...any) error {
 	return status.Errorf(codes.OutOfRange, msg, args...)
 }
 func OutOfRanged(err error, details ...proto.Message) error {
 	return statusErr(codes.OutOfRange, err, details...)
 }
-func Unimplementedf(msg string, args ...interface{}) error {
+func Unimplementedf(msg string, args ...any) error {
 	return status.Errorf(codes.Unimplemented, msg, args...)
 }
 func Unimplementedd(err error, details ...proto.Message) error {
 	return statusErr(codes.Unimplemented, err, details...)
 }
-func Internalf(msg string, args ...interface{}) error {
+func Internalf(msg string, args ...any) error {
 	return status.Errorf(codes.Internal, msg, args...)
 }
 func Internald(err error, details ...proto.Message) error {
 	return statusErr(codes.Internal, err, details...)
 }
-func Unavailablef(msg string, args ...interface{}) error {
+func Unavailablef(msg string, args ...any) error {
 	return status.Errorf(codes.Unavailable, msg, args...)
 }
 func Unavailabled(err error, details ...proto.Message) error {
 	return statusErr(codes.Unavailable, err, details...)
 }
-func DataLossf(msg string, args ...interface{}) error {
+func DataLossf(msg string, args ...any) error {
 	return status.Errorf(codes.DataLoss, msg, args...)
 }
 func DataLossd(err error, details ...proto.Message) error {
 	return statusErr(codes.DataLoss, err, details...)
 }
-func Unauthenticatedf(msg string, args ...interface{}) error {
+func Unauthenticatedf(msg string, args ...any) error {
 	return status.Errorf(codes.Unauthenticated, msg, args...)
 }
 func Unauthenticatedd(err error, details ...proto.Message) error {

@@ -19,7 +19,7 @@ func (s *service) register() error {
 	regFunc := func(service *registry.Service) error {
 		var regErr error
 
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			// set the ttl
 			rOpts := []registry.RegisterOption{registry.RegisterTTL(defaultRegisterTTL)}
 			// attempt to register

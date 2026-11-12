@@ -29,11 +29,11 @@ func makeBasicAuthFunc(v BasicValidator) grpc_auth.AuthFunc {
 			return ctx, err
 		}
 		cs := string(c)
-		s := strings.IndexByte(cs, ':')
-		if s < 0 {
+		before, after, ok := strings.Cut(cs, ":")
+		if !ok {
 			return ctx, errors.Unauthenticatedf("malformed basic auth")
 		}
-		return v(ctx, cs[:s], cs[s+1:])
+		return v(ctx, before, after)
 	}
 }
 

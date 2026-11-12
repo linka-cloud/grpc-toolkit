@@ -23,7 +23,7 @@ func New() interceptors.ServerInterceptors {
 }
 
 func (s iface) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		if i, ok := info.Server.(UnaryInterceptor); ok {
 			return i.UnaryServerInterceptor()(ctx, req, info, handler)
 		}
@@ -32,7 +32,7 @@ func (s iface) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (s iface) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if i, ok := srv.(StreamInterceptor); ok {
 			return i.StreamServerInterceptor()(srv, ss, info, handler)
 		}

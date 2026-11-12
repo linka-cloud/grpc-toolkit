@@ -23,7 +23,7 @@ type protoMessage interface {
 	Unmarshal([]byte) error
 }
 
-func (Codec) Marshal(v interface{}) ([]byte, error) {
+func (Codec) Marshal(v any) ([]byte, error) {
 	switch m := v.(type) {
 	case vtprotoMessage:
 		return m.MarshalVT()
@@ -36,7 +36,7 @@ func (Codec) Marshal(v interface{}) ([]byte, error) {
 	}
 }
 
-func (Codec) Unmarshal(data []byte, v interface{}) error {
+func (Codec) Unmarshal(data []byte, v any) error {
 	switch m := v.(type) {
 	case vtprotoMessage:
 		return m.UnmarshalVT(data)

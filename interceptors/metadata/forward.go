@@ -16,7 +16,7 @@ func NewForwardInterceptors() interceptors.ServerInterceptors {
 type forward struct{}
 
 func (f *forward) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		if md, ok := metadata.FromIncomingContext(ctx); ok {
 			ctx = metadata.NewOutgoingContext(ctx, md.Copy())
 		}
@@ -25,7 +25,7 @@ func (f *forward) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (f *forward) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		ctx := ss.Context()
 		md1, ok := metadata.FromIncomingContext(ctx)
 		if !ok {

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/subtle"
+	"slices"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"google.golang.org/grpc"
@@ -51,7 +52,7 @@ type interceptor struct {
 
 func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	a := grpc_auth.UnaryServerInterceptor(i.authFn)
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		if i.isNotProtected(info.FullMethod) {
 			return handler(ctx, req)
 		}
@@ -61,7 +62,7 @@ func (i *interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 
 func (i *interceptor) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	a := grpc_auth.StreamServerInterceptor(i.authFn)
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if i.isNotProtected(info.FullMethod) {
 			return handler(srv, ss)
 		}
@@ -74,20 +75,13 @@ func (i *interceptor) isNotProtected(endpoint string) bool {
 	if len(i.o.ignoredMethods) == 0 && len(i.o.methods) == 0 {
 		return false
 	}
-	for _, v := range i.o.ignoredMethods {
-		if v == endpoint {
-			return true
-		}
+	if slices.Contains(i.o.ignoredMethods, endpoint) {
+		return true
 	}
 	if len(i.o.methods) == 0 {
 		return false
 	}
-	for _, v := range i.o.methods {
-		if v == endpoint {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(i.o.methods, endpoint)
 }
 
 func Equals(s1, s2 string) bool {

@@ -1,7 +1,6 @@
 package certs
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -15,8 +14,7 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	t.Run("missing", func(t *testing.T) {
 		fn, err := Load(ctx, "missing", "missing")
@@ -46,7 +44,7 @@ func TestLoad(t *testing.T) {
 		require.Equal(t, want.PrivateKey, got.PrivateKey)
 	})
 	t.Run("reload", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			want, err = New("acme.org")
 			require.NoError(t, err)
 			write(t, dir, want)

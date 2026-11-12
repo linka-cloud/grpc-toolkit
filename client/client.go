@@ -72,7 +72,7 @@ type client struct {
 	cc   *grpc.ClientConn
 }
 
-func (c *client) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (c *client) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	return c.cc.Invoke(ctx, method, args, reply, opts...)
 }
 
@@ -83,9 +83,9 @@ func (c *client) NewStream(ctx context.Context, desc *grpc.StreamDesc, method st
 func parseDialTarget(target string) (string, string) {
 	net := "tcp"
 	m1 := strings.Index(target, ":")
-	m2 := strings.Index(target, ":/")
+	found := strings.Contains(target, ":/")
 	// handle unix:addr which will fail with url.Parse
-	if m1 >= 0 && m2 < 0 {
+	if m1 >= 0 && !found {
 		if n := target[0:m1]; n == "unix" {
 			return n, target[m1+1:]
 		}
@@ -94,7 +94,7 @@ func parseDialTarget(target string) (string, string) {
 		net = "pipe"
 		return net, target
 	}
-	if m2 >= 0 {
+	if found {
 		t, err := url.Parse(target)
 		if err != nil {
 			return net, target

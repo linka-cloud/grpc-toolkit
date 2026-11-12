@@ -286,7 +286,7 @@ func WithStreamClientInterceptor(i ...grpc.StreamClientInterceptor) Option {
 }
 
 // WithSubscriberInterceptor adds subscriber interceptors to the options passed into the server
-func WithSubscriberInterceptor(w ...interface{}) Option {
+func WithSubscriberInterceptor(w ...any) Option {
 	return func(o *options) {
 
 	}

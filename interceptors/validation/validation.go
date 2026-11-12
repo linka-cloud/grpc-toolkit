@@ -79,7 +79,7 @@ func errToStatus(err error) error {
 	}
 }
 
-func (i interceptor) validate(req interface{}) error {
+func (i interceptor) validate(req any) error {
 	switch v := req.(type) {
 	case validatorAll:
 		if i.all {
@@ -106,7 +106,7 @@ func NewInterceptors(validateAll bool) interceptors.Interceptors {
 //
 // Invalid messages will be rejected with `InvalidArgument` before reaching any userspace handlers.
 func (i interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if err := i.validate(req); err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (i interceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 //
 // Invalid messages will be rejected with `InvalidArgument` before sending the request to server.
 func (i interceptor) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		if err := i.validate(req); err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func (i interceptor) UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 // handlers. For `ClientStream` (n:1) or `BidiStream` (n:m) RPCs, the messages will be rejected on
 // calls to `stream.Recv()`.
 func (i interceptor) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		wrapper := &recvWrapper{ServerStream: stream, i: i}
 		return handler(srv, wrapper)
 	}
@@ -151,7 +151,7 @@ type recvWrapper struct {
 	grpc.ServerStream
 }
 
-func (s *recvWrapper) RecvMsg(m interface{}) error {
+func (s *recvWrapper) RecvMsg(m any) error {
 	if err := s.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -168,12 +168,12 @@ type sendWrapper struct {
 }
 
 func (s *sendWrapper) Handler() grpc.StreamHandler {
-	return func(srv interface{}, stream grpc.ServerStream) error {
+	return func(srv any, stream grpc.ServerStream) error {
 		return s.handler(srv, s)
 	}
 }
 
-func (s *sendWrapper) SendMsg(m interface{}) error {
+func (s *sendWrapper) SendMsg(m any) error {
 	if err := s.i.validate(m); err != nil {
 		return err
 	}

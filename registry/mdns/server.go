@@ -380,7 +380,7 @@ func (s *Server) probe() {
 
 	randomizer := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		if err := s.SendMulticast(q); err != nil {
 			logrus.Errorf("mdns: failed to send probe: %v", err)
 		}
@@ -406,7 +406,7 @@ func (s *Server) probe() {
 	//    at least a factor of two with every response sent.
 	timeout := 1 * time.Second
 	timer := time.NewTimer(timeout)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		if err := s.SendMulticast(resp); err != nil {
 			logrus.Errorf("mdns: failed to send announcement: %v", err)
 		}

@@ -435,7 +435,7 @@ func (s *service) stop() error {
 	return nil
 }
 
-func (s *service) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
+func (s *service) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.registerService(desc, impl)
@@ -445,13 +445,13 @@ func (s *service) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 // ServiceDesc and is constructed from it for internal purposes.
 type serviceInfo struct {
 	// Contains the implementation for the methods in this service.
-	serviceImpl interface{}
+	serviceImpl any
 	methods     map[string]*grpc.MethodDesc
 	streams     map[string]*grpc.StreamDesc
-	mdata       interface{}
+	mdata       any
 }
 
-func (s *service) registerService(sd *grpc.ServiceDesc, ss interface{}) {
+func (s *service) registerService(sd *grpc.ServiceDesc, ss any) {
 	s.server.RegisterService(sd, ss)
 	s.inproc.RegisterService(sd, ss)
 

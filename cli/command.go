@@ -42,7 +42,7 @@ type fieldInfo struct {
 	FieldValue reflect.Value
 }
 
-func fields(obj interface{}) []fieldInfo {
+func fields(obj any) []fieldInfo {
 	ptrValue := reflect.ValueOf(obj)
 	objValue := ptrValue.Elem()
 
@@ -66,7 +66,7 @@ func fields(obj interface{}) []fieldInfo {
 	return result
 }
 
-func Name(obj interface{}) string {
+func Name(obj any) string {
 	ptrValue := reflect.ValueOf(obj)
 	objValue := ptrValue.Elem()
 	commandName := strings.Replace(objValue.Type().Name(), "Command", "", 1)
@@ -119,7 +119,8 @@ func Command(obj Runnable, c *cobra.Command) *cobra.Command {
 		v := info.FieldValue
 
 		name, alias := name(fieldType.Name, fieldType.Tag.Get("name"), fieldType.Tag.Get("short"))
-		usage := fieldType.Tag.Get("usage")
+		var usage strings.Builder
+		usage.WriteString(fieldType.Tag.Get("usage"))
 		envVars := strings.Split(fieldType.Tag.Get("env"), ",")
 		defValue := fieldType.Tag.Get("default")
 		if len(envVars) == 1 && envVars[0] == "" {
@@ -129,7 +130,7 @@ func Command(obj Runnable, c *cobra.Command) *cobra.Command {
 			if v == "" {
 				continue
 			}
-			usage += fmt.Sprintf(" [$%s]", v)
+			usage.WriteString(fmt.Sprintf(" [$%s]", v))
 		}
 		defInt, err := strconv.Atoi(defValue)
 		if err != nil {
@@ -141,26 +142,26 @@ func Command(obj Runnable, c *cobra.Command) *cobra.Command {
 		flags := c.PersistentFlags()
 		switch fieldType.Type.Kind() {
 		case reflect.Int:
-			flags.IntVarP((*int)(unsafe.Pointer(v.Addr().Pointer())), name, alias, defInt, usage)
+			flags.IntVarP((*int)(unsafe.Pointer(v.Addr().Pointer())), name, alias, defInt, usage.String())
 			envs = append(envs, makeEnvVar(envs, name, envVars, defInt, flags, flags.GetInt)...)
 		case reflect.String:
-			flags.StringVarP((*string)(unsafe.Pointer(v.Addr().Pointer())), name, alias, defValue, usage)
+			flags.StringVarP((*string)(unsafe.Pointer(v.Addr().Pointer())), name, alias, defValue, usage.String())
 			envs = append(envs, makeEnvVar(envs, name, envVars, defValue, flags, flags.GetString)...)
 		case reflect.Slice:
 			// env is not supported for slices
 			switch fieldType.Tag.Get("split") {
 			case "false":
 				arrays[name] = v
-				flags.StringArrayP(name, alias, nil, usage)
+				flags.StringArrayP(name, alias, nil, usage.String())
 			default:
 				slices[name] = v
-				flags.StringSliceP(name, alias, nil, usage)
+				flags.StringSliceP(name, alias, nil, usage.String())
 			}
 		case reflect.Map:
 			maps[name] = v
-			flags.StringSliceP(name, alias, nil, usage)
+			flags.StringSliceP(name, alias, nil, usage.String())
 		case reflect.Bool:
-			flags.BoolVarP((*bool)(unsafe.Pointer(v.Addr().Pointer())), name, alias, defBool, usage)
+			flags.BoolVarP((*bool)(unsafe.Pointer(v.Addr().Pointer())), name, alias, defBool, usage.String())
 			envs = append(envs, makeEnvVar(envs, name, envVars, defBool, flags, flags.GetBool)...)
 		default:
 			panic("Unknown kind on field " + fieldType.Name + " on " + objValue.Type().Name())
@@ -257,7 +258,7 @@ func name(name, setName, short string) (string, string) {
 	name = caseRegexp.ReplaceAllString(parts[i], "$1-$2")
 	name = strings.ToLower(name)
 	result := append([]string{name}, parts[0:i]...)
-	for i := 0; i < len(result); i++ {
+	for i := range result {
 		result[i] = strings.ToLower(result[i])
 	}
 	if short == "" && len(result) > 1 {

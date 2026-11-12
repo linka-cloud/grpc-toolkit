@@ -32,20 +32,20 @@ func TestChainUnaryServer(t *testing.T) {
 	input := "input"
 	output := "output"
 
-	first := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	first := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		requireContextValue(t, ctx, "parent", "first interceptor must know the parent context value")
 		require.Equal(t, parentUnaryInfo, info, "first interceptor must know the someUnaryServerInfo")
 		ctx = context.WithValue(ctx, "first", 1)
 		return handler(ctx, req)
 	}
-	second := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	second := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		requireContextValue(t, ctx, "parent", "second interceptor must know the parent context value")
 		requireContextValue(t, ctx, "first", "second interceptor must know the first context value")
 		require.Equal(t, parentUnaryInfo, info, "second interceptor must know the someUnaryServerInfo")
 		ctx = context.WithValue(ctx, "second", 1)
 		return handler(ctx, req)
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		require.EqualValues(t, input, req, "handler must get the input")
 		requireContextValue(t, ctx, "parent", "handler must know the parent context value")
 		requireContextValue(t, ctx, "first", "handler must know the first context value")
@@ -64,14 +64,14 @@ func TestChainStreamServer(t *testing.T) {
 	sentMessage := "sent"
 	outputError := fmt.Errorf("some error")
 
-	first := func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	first := func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		requireContextValue(t, stream.Context(), "parent", "first interceptor must know the parent context value")
 		require.Equal(t, parentStreamInfo, info, "first interceptor must know the parentStreamInfo")
 		require.Equal(t, someService, srv, "first interceptor must know someService")
 		wrapped := interceptors.NewContextServerStream(context.WithValue(stream.Context(), "first", 1), stream)
 		return handler(srv, wrapped)
 	}
-	second := func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	second := func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		requireContextValue(t, stream.Context(), "parent", "second interceptor must know the parent context value")
 		requireContextValue(t, stream.Context(), "first", "second interceptor must know the first context value")
 		require.Equal(t, parentStreamInfo, info, "second interceptor must know the parentStreamInfo")
@@ -79,7 +79,7 @@ func TestChainStreamServer(t *testing.T) {
 		wrapped := interceptors.NewContextServerStream(context.WithValue(stream.Context(), "second", 1), stream)
 		return handler(srv, wrapped)
 	}
-	handler := func(srv interface{}, stream grpc.ServerStream) error {
+	handler := func(srv any, stream grpc.ServerStream) error {
 		require.Equal(t, someService, srv, "handler must know someService")
 		requireContextValue(t, stream.Context(), "parent", "handler must know the parent context value")
 		requireContextValue(t, stream.Context(), "first", "handler must know the first context value")
@@ -102,14 +102,14 @@ func TestChainUnaryClient(t *testing.T) {
 	replyMessage := "reply"
 	outputError := fmt.Errorf("some error")
 
-	first := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	first := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		requireContextValue(t, ctx, "parent", "first must know the parent context value")
 		require.Equal(t, someServiceName, method, "first must know someService")
 		require.Len(t, opts, 1, "first should see parent CallOptions")
 		wrappedCtx := context.WithValue(ctx, "first", 1)
 		return invoker(wrappedCtx, method, req, reply, cc, opts...)
 	}
-	second := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	second := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		requireContextValue(t, ctx, "parent", "second must know the parent context value")
 		requireContextValue(t, ctx, "first", "second must know the first context value")
 		require.Equal(t, someServiceName, method, "second must know someService")
@@ -118,7 +118,7 @@ func TestChainUnaryClient(t *testing.T) {
 		wrappedCtx := context.WithValue(ctx, "second", 1)
 		return invoker(wrappedCtx, method, req, reply, cc, wrappedOpts...)
 	}
-	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+	invoker := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 		require.Equal(t, someServiceName, method, "invoker must know someService")
 		requireContextValue(t, ctx, "parent", "invoker must know the parent context value")
 		requireContextValue(t, ctx, "first", "invoker must know the first context value")
@@ -169,7 +169,7 @@ func TestChainStreamClient(t *testing.T) {
 	require.Equal(t, clientStream, someStream, "chain must return invokers's clientstream")
 }
 
-func requireContextValue(t *testing.T, ctx context.Context, key string, msg ...interface{}) {
+func requireContextValue(t *testing.T, ctx context.Context, key string, msg ...any) {
 	val := ctx.Value(key)
 	require.NotNil(t, val, msg...)
 	require.Equal(t, someValue, val, msg...)
@@ -178,15 +178,15 @@ func requireContextValue(t *testing.T, ctx context.Context, key string, msg ...i
 type fakeServerStream struct {
 	grpc.ServerStream
 	ctx         context.Context
-	recvMessage interface{}
-	sentMessage interface{}
+	recvMessage any
+	sentMessage any
 }
 
 func (f *fakeServerStream) Context() context.Context {
 	return f.ctx
 }
 
-func (f *fakeServerStream) SendMsg(m interface{}) error {
+func (f *fakeServerStream) SendMsg(m any) error {
 	if f.sentMessage != nil {
 		return status.Errorf(codes.AlreadyExists, "fakeServerStream only takes one message, sorry")
 	}
@@ -194,7 +194,7 @@ func (f *fakeServerStream) SendMsg(m interface{}) error {
 	return nil
 }
 
-func (f *fakeServerStream) RecvMsg(m interface{}) error {
+func (f *fakeServerStream) RecvMsg(m any) error {
 	if f.recvMessage == nil {
 		return status.Errorf(codes.NotFound, "fakeServerStream has no message, sorry")
 	}

@@ -51,7 +51,7 @@ func NewInterceptors(opts ...Option) interceptors.ServerInterceptors {
 }
 
 func (b *ban) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		actor, ok, err := b.check(ctx)
 		if err != nil {
 			return nil, err
@@ -74,7 +74,7 @@ func (b *ban) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (b *ban) StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		actor, ok, err := b.check(ss.Context())
 		if err != nil {
 			return err

@@ -23,7 +23,7 @@ func UnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerIn
 
 	// Dummy interceptor maintained for backward compatibility to avoid returning nil.
 	if n == 0 {
-		return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			return handler(ctx, req)
 		}
 	}
@@ -35,7 +35,7 @@ func UnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerIn
 
 	// Return a function which satisfies the interceptor interface, and which is
 	// a closure over the given list of interceptors to be chained.
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		currHandler := handler
 		// Iterate backwards through all interceptors except the first (outermost).
 		// Wrap each one in a function which satisfies the handler interface, but
@@ -44,7 +44,7 @@ func UnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerIn
 		for i := n - 1; i > 0; i-- {
 			// Rebind to loop-local vars so they can be closed over.
 			innerHandler, i := currHandler, i
-			currHandler = func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
+			currHandler = func(currentCtx context.Context, currentReq any) (any, error) {
 				return interceptors[i](currentCtx, currentReq, info, innerHandler)
 			}
 		}
@@ -66,7 +66,7 @@ func StreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServe
 
 	// Dummy interceptor maintained for backward compatibility to avoid returning nil.
 	if n == 0 {
-		return func(srv interface{}, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		return func(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			return handler(srv, stream)
 		}
 	}
@@ -75,11 +75,11 @@ func StreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServe
 		return interceptors[0]
 	}
 
-	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		currHandler := handler
 		for i := n - 1; i > 0; i-- {
 			innerHandler, i := currHandler, i
-			currHandler = func(currentSrv interface{}, currentStream grpc.ServerStream) error {
+			currHandler = func(currentSrv any, currentStream grpc.ServerStream) error {
 				return interceptors[i](currentSrv, currentStream, info, innerHandler)
 			}
 		}
@@ -96,7 +96,7 @@ func UnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryClientIn
 
 	// Dummy interceptor maintained for backward compatibility to avoid returning nil.
 	if n == 0 {
-		return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}
 	}
@@ -105,11 +105,11 @@ func UnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryClientIn
 		return interceptors[0]
 	}
 
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		currInvoker := invoker
 		for i := n - 1; i > 0; i-- {
 			innerInvoker, i := currInvoker, i
-			currInvoker = func(currentCtx context.Context, currentMethod string, currentReq, currentRepl interface{}, currentConn *grpc.ClientConn, currentOpts ...grpc.CallOption) error {
+			currInvoker = func(currentCtx context.Context, currentMethod string, currentReq, currentRepl any, currentConn *grpc.ClientConn, currentOpts ...grpc.CallOption) error {
 				return interceptors[i](currentCtx, currentMethod, currentReq, currentRepl, currentConn, innerInvoker, currentOpts...)
 			}
 		}
