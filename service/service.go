@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,7 +21,6 @@ import (
 	"github.com/pires/go-proxyproto"
 	"github.com/rs/cors"
 	"github.com/soheilhy/cmux"
-	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
@@ -68,7 +68,6 @@ type service struct {
 	id     string
 	regSvc *registry.Service
 	o      sync.Once
-	closed chan struct{}
 }
 
 func newService(opts ...Option) (*service, error) {
@@ -168,7 +167,10 @@ func (s *service) Options() Options {
 func (s *service) start() (*errgroup.Group, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.closed = make(chan struct{})
+
+	if s.running {
+		return nil, errors.New("service already started")
+	}
 
 	// configure grpc web now that we are ready to go
 	if err := s.grpcWeb(s.opts.grpcWebOpts...); err != nil {
@@ -377,11 +379,7 @@ func (s *service) Start() error {
 }
 
 func (s *service) Stop() error {
-	var err error
-	s.o.Do(func() {
-		err = s.stop()
-	})
-	return err
+	return s.stop()
 }
 func (s *service) stop() error {
 	log := logger.C(s.opts.ctx)
@@ -398,7 +396,6 @@ func (s *service) stop() error {
 	if err := s.opts.registry.Deregister(s.regSvc); err != nil {
 		log.Errorf("failed to deregister service: %v", err)
 	}
-	defer close(s.closed)
 	t := time.NewTimer(5 * time.Second)
 	defer t.Stop()
 	sigs := s.notify()
@@ -503,9 +500,7 @@ func (s *service) GetServiceInfo() map[string]grpc.ServiceInfo {
 }
 
 func (s *service) Close() error {
-	err := multierr.Combine(s.Stop())
-	<-s.closed
-	return err
+	return s.Stop()
 }
 
 func (s *service) notify() <-chan os.Signal {
